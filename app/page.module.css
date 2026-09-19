@@ -1,0 +1,160 @@
+/* -- Desktop canvas -- */
+.desktop {
+  position: relative;
+  min-height: 100dvh;
+  background: #e3e3e3;
+  background-image:
+    radial-gradient(circle at 30% 40%, rgba(255,255,255,0.55) 0%, transparent 60%),
+    radial-gradient(circle at 75% 70%, rgba(180,180,180,0.35) 0%, transparent 55%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "San Francisco", "Helvetica Neue", sans-serif;
+}
+
+/* -- Icon grid -- */
+.iconGrid {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3rem, 8vw, 7rem);
+  flex: 1;
+  padding-bottom: 6rem;
+}
+
+/* -- Single icon -- */
+.iconItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.iconItem:hover {
+  transform: scale(1.06);
+}
+
+.iconItem:hover .iconWrapper {
+  filter: brightness(1.08) drop-shadow(0 8px 20px rgba(0,0,0,0.22));
+}
+
+.iconItem:active {
+  transform: scale(0.97);
+}
+
+.iconItem:focus-visible .iconWrapper {
+  outline: 3px solid rgba(0, 122, 255, 0.7);
+  border-radius: 12px;
+}
+
+/* -- Icon image wrapper -- */
+.iconWrapper {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.18));
+  transition: filter 150ms ease;
+}
+
+.iconImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* -- Icon label -- */
+.iconLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1a1a1a;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+  max-width: 88px;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+/* -- Footer bar -- */
+.footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.footerBar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: 52px;
+  background: linear-gradient(
+    to right,
+    #f43454 0%,
+    #f43454 15%,
+    #fb7a04 49%,
+    #83e01b 87%,
+    #83e01b 100%
+  );
+  opacity: 0.82;
+}
+
+.footerLeft,
+.footerCenter,
+.footerRight {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  padding: 0 1.25rem;
+}
+
+.footerLeft  { justify-content: flex-start; }
+.footerCenter { justify-content: center;    }
+.footerRight  { justify-content: flex-end;  }
+
+/* -- Full name strip -- */
+.footerName {
+  background: rgba(220,220,220,0.92);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #444;
+  text-align: center;
+  padding: 5px 1rem;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+/* -- Responsive -- */
+@media (max-width: 500px) {
+  .iconGrid {
+    gap: 2.5rem;
+  }
+  .iconWrapper {
+    width: 72px;
+    height: 72px;
+  }
+  .footerLeft,
+  .footerCenter,
+  .footerRight {
+    font-size: 8px;
+    padding: 0 0.5rem;
+  }
+  .footerName {
+    font-size: 8px;
+    letter-spacing: 0.08em;
+  }
+}

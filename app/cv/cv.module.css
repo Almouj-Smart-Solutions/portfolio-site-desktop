@@ -1,0 +1,677 @@
+/* ── Desktop Canvas Environment ────────────────────────── */
+.desktopEnvironment {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  background: #e3e3e3;
+  background-image:
+    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.65) 0%, transparent 60%),
+    radial-gradient(circle at 75% 70%, rgba(180, 180, 180, 0.35) 0%, transparent 55%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "San Francisco", "Helvetica Neue", sans-serif;
+  user-select: none;
+}
+
+/* ── Background Desktop Icons (under window) ───────────── */
+.backgroundDesktop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.35;
+  filter: blur(1px);
+  transform: scale(0.98);
+  transition: opacity 250ms ease, filter 250ms ease, transform 250ms ease;
+}
+
+.bgIconGrid {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(3rem, 8vw, 7rem);
+  padding-bottom: 6rem;
+  pointer-events: all;
+}
+
+.bgIconItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 150ms ease;
+}
+
+.bgIconItem:hover {
+  transform: scale(1.05);
+}
+
+.activeItem {
+  outline: 2px dashed rgba(0, 122, 255, 0.4);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.bgIconWrapper {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+}
+
+.bgIconImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bgIconLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: #1a1a1a;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* ── macOS Floating Window Container ────────────────────── */
+.windowContainer {
+  position: relative;
+  z-index: 50;
+  width: min(940px, 94vw);
+  height: min(84vh, 760px);
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow:
+    0 24px 70px -10px rgba(0, 0, 0, 0.38),
+    0 10px 24px -5px rgba(0, 0, 0, 0.18),
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              height 240ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 220ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 200ms ease;
+}
+
+.opening {
+  animation: windowPopOpen 260ms cubic-bezier(0.175, 0.885, 0.32, 1.15) both;
+}
+
+.closing {
+  transform: scale(0.92);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.maximized {
+  width: calc(100vw - 2rem) !important;
+  height: calc(100vh - 5.5rem) !important;
+  border-radius: 8px;
+}
+
+@keyframes windowPopOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── macOS Titlebar ─────────────────────────────────────── */
+.titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 42px;
+  padding: 0 14px;
+  background: rgba(246, 246, 246, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  user-select: none;
+  cursor: default;
+}
+
+/* ── Traffic Lights ─────────────────────────────────────── */
+.trafficLights {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 140px;
+}
+
+.trafficLight {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  position: relative;
+  transition: filter 120ms ease, transform 120ms ease;
+}
+
+.trafficLight:active {
+  transform: scale(0.9);
+}
+
+.closeBtn {
+  background-color: #ff5f56;
+  border-color: #e0443e;
+}
+
+.minimizeBtn {
+  background-color: #ffbd2e;
+  border-color: #dea123;
+}
+
+.maximizeBtn {
+  background-color: #27c93f;
+  border-color: #1aab29;
+}
+
+.btnSymbol {
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+
+.trafficLights:hover .btnSymbol {
+  opacity: 1;
+}
+
+/* ── Title & Proxy Icon ─────────────────────────────────── */
+.windowTitleGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.docProxyIcon {
+  width: 15px;
+  height: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.windowTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2c2c2c;
+  letter-spacing: -0.01em;
+}
+
+.windowBadge {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #666666;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+/* ── Titlebar Right Actions Toolbar ─────────────────────── */
+.windowToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 280px;
+}
+
+.segmentedControl {
+  display: flex;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.segmentBtn {
+  font-size: 11px;
+  font-weight: 500;
+  color: #555555;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.segmentActive {
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+}
+
+.zoomControlGroup {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.zoomLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #333333;
+  padding: 3px 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  min-width: 38px;
+  text-align: center;
+}
+
+.toolBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #444444;
+  background: transparent;
+  border: none;
+  padding: 3px 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease;
+}
+
+.toolBtn:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: #111111;
+}
+
+.downloadActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #111111;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 4px 8px;
+  text-decoration: none;
+  transition: all 120ms ease;
+}
+
+.downloadActionBtn:hover {
+  background: #007aff;
+  border-color: #007aff;
+  color: #ffffff;
+}
+
+.actionIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.btnText {
+  font-size: 11px;
+}
+
+/* ── Sub Toolbar / Breadcrumb ───────────────────────────── */
+.subToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 16px;
+  background: #fdfdfd;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 11px;
+  color: #666666;
+}
+
+.pathBreadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pathSegment {
+  color: #777777;
+}
+
+.pathDivider {
+  color: #cccccc;
+  font-size: 10px;
+}
+
+.pathSegmentActive {
+  color: #222222;
+  font-weight: 500;
+}
+
+.statusMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: #888888;
+}
+
+.statusLive {
+  color: #007aff;
+  font-weight: 500;
+}
+
+/* ── Window Content Body ────────────────────────────────── */
+.windowContent {
+  flex: 1;
+  position: relative;
+  background: #ececec;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+/* PDF Embedded Viewer */
+.pdfViewerContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-origin: top center;
+  transition: transform 180ms ease;
+}
+
+.pdfIframe {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  border: none;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* RTF Styled Document View */
+.rtfDocumentView {
+  width: 100%;
+  max-width: 820px;
+  padding: 2rem 1rem;
+}
+
+.rtfPaper {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 3rem 3.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  color: #1a1a1a;
+  font-family: var(--font-sans);
+}
+
+.rtfHeader {
+  margin-bottom: 2rem;
+}
+
+.rtfName {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.1;
+  color: #111111;
+  margin-bottom: 0.5rem;
+}
+
+.rtfRole {
+  font-size: 0.9rem;
+  color: #555555;
+  font-weight: 400;
+  margin-bottom: 0.25rem;
+}
+
+.rtfLocation {
+  font-size: 0.8rem;
+  color: #888888;
+  font-style: italic;
+}
+
+.rtfDivider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 1.75rem 0;
+}
+
+.rtfSection {
+  margin-bottom: 2.25rem;
+}
+
+.rtfSectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #888888;
+  margin-bottom: 1rem;
+}
+
+.rtfPillars {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.pillarItem {
+  padding: 0.85rem 1.25rem;
+  background: #fafafa;
+  border-left: 3px solid #cccccc;
+  border-radius: 0 6px 6px 0;
+}
+
+.pillarTagPink {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-pink);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.pillarTagOrange {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-orange);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.pillarTagGreen {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-green);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.pillarDesc {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #444444;
+}
+
+.rtfList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-left: 1.25rem;
+}
+
+.rtfListItem {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #333333;
+}
+
+.rtfText {
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: #444444;
+}
+
+/* ── Window Footer / Status Bar ─────────────────────────── */
+.windowFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 16px;
+  background: rgba(246, 246, 246, 0.96);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+  color: #666666;
+}
+
+.footerHint {
+  color: #888888;
+  font-size: 10.5px;
+}
+
+.kbd {
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 3px;
+  padding: 1px 4px;
+  color: #444444;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+
+.footerRightGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footerLink {
+  color: #007aff;
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 11px;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+}
+
+
+/* ── Fixed Bottom Branding Gradient Footer ──────────────── */
+.pageFooter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.footerBar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: 52px;
+  background: linear-gradient(
+    to right,
+    #f43454 0%,
+    #f43454 15%,
+    #fb7a04 49%,
+    #83e01b 87%,
+    #83e01b 100%
+  );
+  opacity: 0.82;
+}
+
+.footerLeft,
+.footerCenter,
+.footerRight {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  padding: 0 1.25rem;
+}
+
+.footerLeft   { justify-content: flex-start; }
+.footerCenter { justify-content: center;     }
+.footerRight  { justify-content: flex-end;   }
+
+.footerName {
+  background: rgba(220, 220, 220, 0.92);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #444444;
+  text-align: center;
+  padding: 5px 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* ── Responsive Mobile Adjustments ──────────────────────── */
+@media (max-width: 768px) {
+  .windowContainer {
+    width: 96vw;
+    height: 86vh;
+    border-radius: 8px;
+  }
+  .windowToolbar {
+    width: auto;
+  }
+  .windowTitle {
+    display: none;
+  }
+  .btnText {
+    display: none;
+  }
+  .rtfPaper {
+    padding: 1.5rem;
+  }
+}

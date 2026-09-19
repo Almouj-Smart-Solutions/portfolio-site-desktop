@@ -1,0 +1,109 @@
+/* ── Curriculum Vitae Layout (Matches cv.pdf) ─────────────────── */
+.cvContainer {
+  font-family: var(--font-fira), system-ui, sans-serif;
+  color: #333333;
+  padding-top: 4px;
+  user-select: text;
+}
+
+.cvGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  column-gap: 24px;
+  align-items: start;
+}
+
+.columnLeft,
+.columnRight {
+  min-width: 0;
+}
+
+.section {
+  margin-bottom: 22px;
+}
+
+.sectionTitle {
+  font-family: var(--font-fira), system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: #222222;
+  margin: 0 0 10px 0;
+  padding-left: 60px;
+}
+
+.entryList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entryRow {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  column-gap: 8px;
+  align-items: baseline;
+}
+
+.entryDate {
+  font-family: var(--font-fira), system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 200;
+  color: #888888;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.entryContent {
+  font-family: var(--font-fira), system-ui, sans-serif;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: #333333;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-weight: 500;
+  color: #222222;
+}
+
+.itemDesc {
+  font-weight: 300;
+  color: #444444;
+}
+
+.itemDescInline {
+  font-weight: 300;
+  color: #444444;
+}
+
+.researchList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.researchItem {
+  padding-left: 60px;
+  font-family: var(--font-fira), system-ui, sans-serif;
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+/* ── Responsive adjustments (@media < 600px) ─────────────────── */
+@media (max-width: 600px) {
+  .cvGrid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .sectionTitle,
+  .researchItem {
+    padding-left: 56px;
+  }
+
+  .entryRow {
+    grid-template-columns: 48px 1fr;
+  }
+}

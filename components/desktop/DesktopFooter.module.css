@@ -1,0 +1,343 @@
+/* ── Floating Mouse Scroll Indicator Pill Icon ──────────────── */
+.mouseScrollPill {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  user-select: none;
+}
+
+.mousePillBody {
+  display: block;
+  width: 15px;
+  height: 24px;
+  border: 1.6px solid #111111;
+  border-radius: 8px;
+  position: relative;
+  background: transparent;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.mouseScrollPill:hover .mousePillBody {
+  transform: scale(1.12);
+  border-color: #000000;
+}
+
+.mouseWheelDot {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 5px;
+  background: #111111;
+  border-radius: 1px;
+  animation: wheelScrollHint 1.8s ease-in-out infinite;
+}
+
+@keyframes wheelScrollHint {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    opacity: 0.3;
+    transform: translateX(-50%) translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ── Main Elastic Stretching Footer ──────────────────────────── */
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  z-index: 110;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 24px 10px 24px;
+  background: linear-gradient(
+    to right,
+    #f43454 0%,
+    #f43454 12%,
+    #fb7a04 48%,
+    #83e01b 86%,
+    #83e01b 100%
+  );
+  font-family: var(--font-fira), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.collapsed {
+  cursor: pointer;
+}
+
+.expanded {
+  cursor: default;
+}
+
+/* ── Top Discipline Row (White text) ─────────────────────────── */
+.disciplineRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  width: 100%;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.disciplineLeft,
+.disciplineCenter,
+.disciplineRight {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.disciplineLeft {
+  text-align: left;
+}
+
+.disciplineCenter {
+  text-align: center;
+}
+
+.disciplineRight {
+  text-align: right;
+}
+
+/* ── Expanded Content Grid ──────────────────────────────────── */
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1.4fr 1.2fr 1fr;
+  gap: 20px;
+  width: 100%;
+  flex: 1;
+  align-items: flex-start;
+  margin-top: 4px;
+  margin-bottom: 6px;
+  opacity: 1;
+  transition: opacity 250ms ease;
+}
+
+.collapsed .contentGrid {
+  /* In collapsed state, hide the extra inner links */
+  display: grid;
+  opacity: 1;
+}
+
+.collapsed .colDownloads,
+.collapsed .colLinks {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.collapsed .bottomDate,
+.collapsed .bottomClock,
+.collapsed .bottomTopPage,
+.collapsed .bottomCopyright {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Column 1: Author Info ──────────────────────────────────── */
+.colAuthor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.authorName {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #000000;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.authorEmail {
+  font-size: 10.5px;
+  font-weight: 300;
+  color: #000000;
+  text-decoration: none;
+  line-height: 1.2;
+  transition: opacity 150ms ease;
+}
+
+.authorEmail:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+/* ── Column 2 & 3: Downloads & Links ─────────────────────────── */
+.colDownloads,
+.colLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sectionHeader {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #000000;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.footerLink {
+  font-size: 10.5px;
+  font-weight: 300;
+  color: #000000;
+  text-decoration: none;
+  line-height: 1.25;
+  transition: opacity 120ms ease;
+  width: fit-content;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+  opacity: 0.75;
+}
+
+.linkBtn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ── Bottom Metadata Row ─────────────────────────────────────── */
+.bottomRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1.2fr 0.6fr 0.4fr;
+  width: 100%;
+  align-items: flex-end;
+  margin-top: auto;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+
+.bottomCopyright {
+  font-size: 10px;
+  font-weight: 300;
+  color: #000000;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.bottomDate {
+  font-size: 10px;
+  font-weight: 300;
+  color: #000000;
+  line-height: 1.2;
+}
+
+.bottomClock {
+  font-size: 10px;
+  font-weight: 300;
+  color: #000000;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.bottomTopPage {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.topPageBtn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 10px;
+  font-weight: 300;
+  color: #000000;
+  cursor: pointer;
+  transition: opacity 150ms ease;
+  font-family: inherit;
+}
+
+.topPageBtn:hover {
+  text-decoration: underline;
+  opacity: 0.75;
+}
+
+/* ── Responsive Styling ──────────────────────────────────────── */
+@media (max-width: 860px) {
+  .footer {
+    padding: 8px 14px 8px 14px;
+  }
+
+  .disciplineRow {
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .disciplineLeft,
+  .disciplineCenter,
+  .disciplineRight {
+    font-size: 9.5px;
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .authorName {
+    font-size: 10px;
+  }
+
+  .authorEmail {
+    font-size: 9.5px;
+  }
+
+  .bottomRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .bottomCopyright {
+    grid-column: span 2;
+    font-size: 9px;
+  }
+
+  .bottomDate,
+  .bottomClock,
+  .topPageBtn {
+    font-size: 9px;
+  }
+}
