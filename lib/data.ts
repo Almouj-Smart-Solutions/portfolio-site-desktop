@@ -36,7 +36,30 @@ export const workProjects = [
     status: "Commissioned to Build",
     client: "School Renovation, Development, and Equipping Organization in collaboration with Fars Province Governor Office",
     summary: "This project harnesses the critical imagination to generate communities without boundaries through artivism, providing a more dignified and respectful co-learning environment.",
-    imageCount: 22,
+    essay: `This project harnesses the critical imagination to generate communities without boundaries through artivism, providing a more dignified and respectful co-learning environment.
+
+Developed under government tenure with the School Renovation, Development, and Equipping Organization in collaboration with Fars Province Governor Office, it treats architecture as a form of communication — a spatial language through which communities can meet without the usual hard edges of enclosure.
+
+The 7,847 m2 commission in Maharlou, Fars, Iran is designed as a co-learning campus whose built elements are meant to objectify ordinary school parts (wall, court, frame, stair) into space-makers, so that the institution can host more than one community at once.`,
+    images: [
+      "/assets/work/among-community/03.svg",
+      "/assets/work/among-community/04.svg",
+      "/assets/work/among-community/05.svg",
+      "/assets/work/among-community/08.svg",
+      "/assets/work/among-community/09.svg",
+      "/assets/work/among-community/10.svg",
+      "/assets/work/among-community/11.svg",
+      "/assets/work/among-community/12.svg",
+      "/assets/work/among-community/13.svg",
+      "/assets/work/among-community/15.svg",
+      "/assets/work/among-community/16.svg",
+      "/assets/work/among-community/17.svg",
+      "/assets/work/among-community/19.svg",
+      "/assets/work/among-community/20.svg",
+      "/assets/work/among-community/21.svg",
+      "/assets/work/among-community/22.svg",
+    ],
+    imageCount: 16,
     tags: ["Artivism", "Education", "Community", "Proxemics"],
   },
 ];

@@ -2,19 +2,21 @@
 .desktopCanvas {
   position: relative;
   width: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
   background: #cdcdcd;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  isolation: isolate;
   font-family: var(--font-fira), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   user-select: none;
 }
 
 /* ── Desktop Icons Layer ────────────────────────────────── */
 .desktopIconsLayer {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -23,12 +25,19 @@
   flex: 1;
   padding-bottom: 5rem;
   z-index: 10;
-  transition: filter 250ms ease, opacity 250ms ease;
+  transition: filter 250ms ease, opacity 250ms ease, mix-blend-mode 250ms ease;
 }
 
 .dimmed {
   opacity: 0.35;
   filter: blur(1.5px);
+}
+
+.ghosted {
+  z-index: 45;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  filter: none;
 }
 
 .desktopIcon {
@@ -84,8 +93,7 @@
 /* Responsive mobile adjustments */
 @media (max-width: 768px) {
   .desktopCanvas {
-    min-height: 100dvh;
-    padding-top: 36px;
+    height: 100dvh;
     padding-bottom: 80px;
   }
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Fira_Sans } from "next/font/google";
-import Nav from "@/components/Nav";
 import "@/styles/globals.css";
 
 const firaSans = Fira_Sans({
@@ -25,7 +24,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={firaSans.variable}>
       <body>
-        <Nav />
         <main>{children}</main>
       </body>
     </html>

@@ -1,9 +1,9 @@
-/* ── Floating Mouse Scroll Indicator Pill Icon ──────────────── */
+/* ── Floating Mouse Scroll Indicator ─────────────────────── */
 .mouseScrollPill {
-  position: fixed;
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 120;
+  z-index: 50;
   cursor: pointer;
   background: transparent;
   border: none;
@@ -58,25 +58,25 @@
   }
 }
 
-/* ── Main Elastic Stretching Footer ──────────────────────────── */
+/* ── Main Footer ─────────────────────────────────────────── */
 .footer {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  width: 100vw;
-  z-index: 110;
+  width: 100%;
+  z-index: 4;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 10px 24px 10px 24px;
+  padding: 8px 22px 10px;
+  --g-center: 48%;
   background: linear-gradient(
     to right,
     #f43454 0%,
-    #f43454 12%,
-    #fb7a04 48%,
-    #83e01b 86%,
+    #f43454 calc(var(--g-center) - 36%),
+    #fb7a04 var(--g-center),
+    #83e01b calc(var(--g-center) + 38%),
     #83e01b 100%
   );
   font-family: var(--font-fira), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
@@ -88,17 +88,21 @@
   cursor: pointer;
 }
 
-.expanded {
+.expanded,
+.stretching {
   cursor: default;
 }
 
-/* ── Top Discipline Row (White text) ─────────────────────────── */
+.stretching {
+  will-change: height;
+}
+
+/* ── Top discipline labels ───────────────────────────────── */
 .disciplineRow {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   width: 100%;
   align-items: flex-start;
-  margin-bottom: 8px;
   flex-shrink: 0;
 }
 
@@ -110,61 +114,49 @@
   letter-spacing: -0.01em;
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  line-height: 1.2;
 }
 
-.disciplineLeft {
-  text-align: left;
-}
+.disciplineLeft { text-align: left; }
+.disciplineCenter { text-align: center; }
+.disciplineRight { text-align: right; }
 
-.disciplineCenter {
-  text-align: center;
-}
-
-.disciplineRight {
-  text-align: right;
-}
-
-/* ── Expanded Content Grid ──────────────────────────────────── */
-.contentGrid {
+/* ── Middle: name stays top, downloads/links drop on stretch */
+.contentArea {
   display: grid;
-  grid-template-columns: 1.4fr 1.2fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.35fr 2.65fr;
+  gap: 12px 28px;
   width: 100%;
   flex: 1;
-  align-items: flex-start;
-  margin-top: 4px;
-  margin-bottom: 6px;
-  opacity: 1;
-  transition: opacity 250ms ease;
+  min-height: 0;
+  padding-top: 6px;
 }
 
-.collapsed .contentGrid {
-  /* In collapsed state, hide the extra inner links */
-  display: grid;
-  opacity: 1;
-}
-
-.collapsed .colDownloads,
-.collapsed .colLinks {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.collapsed .bottomDate,
-.collapsed .bottomClock,
-.collapsed .bottomTopPage,
-.collapsed .bottomCopyright {
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* ── Column 1: Author Info ──────────────────────────────────── */
 .colAuthor {
+  align-self: start;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.colsSecondary {
+  display: grid;
+  grid-template-columns: 0.9fr 1.75fr;
+  gap: 12px 28px;
+  align-self: start;
+  align-items: start;
+}
+
+.stretching .colsSecondary {
+  align-self: end;
+}
+
+.colDownloads,
+.colLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 2px;
 }
 
 .authorName {
@@ -174,6 +166,7 @@
   color: #000000;
   line-height: 1.25;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .authorEmail {
@@ -182,20 +175,11 @@
   color: #000000;
   text-decoration: none;
   line-height: 1.2;
-  transition: opacity 150ms ease;
+  width: fit-content;
 }
 
 .authorEmail:hover {
   text-decoration: underline;
-  opacity: 0.8;
-}
-
-/* ── Column 2 & 3: Downloads & Links ─────────────────────────── */
-.colDownloads,
-.colLinks {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
 }
 
 .sectionHeader {
@@ -218,7 +202,6 @@
   color: #000000;
   text-decoration: none;
   line-height: 1.25;
-  transition: opacity 120ms ease;
   width: fit-content;
 }
 
@@ -236,15 +219,15 @@
   font-family: inherit;
 }
 
-/* ── Bottom Metadata Row ─────────────────────────────────────── */
+/* ── Bottom meta row ─────────────────────────────────────── */
 .bottomRow {
   display: grid;
-  grid-template-columns: 1.4fr 1.2fr 0.6fr 0.4fr;
+  grid-template-columns: 1.35fr 0.9fr 0.7fr 1.05fr;
+  gap: 12px 28px;
   width: 100%;
   align-items: flex-end;
-  margin-top: auto;
-  padding-top: 4px;
   flex-shrink: 0;
+  padding-top: 8px;
 }
 
 .bottomCopyright {
@@ -253,20 +236,20 @@
   color: #000000;
   line-height: 1.2;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-.bottomDate {
+.bottomDate,
+.bottomClock,
+.topPageBtn {
   font-size: 10px;
   font-weight: 300;
   color: #000000;
   line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
 .bottomClock {
-  font-size: 10px;
-  font-weight: 300;
-  color: #000000;
-  line-height: 1.2;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
@@ -280,11 +263,7 @@
   background: transparent;
   border: none;
   padding: 0;
-  font-size: 10px;
-  font-weight: 300;
-  color: #000000;
   cursor: pointer;
-  transition: opacity 150ms ease;
   font-family: inherit;
 }
 
@@ -293,15 +272,15 @@
   opacity: 0.75;
 }
 
-/* ── Responsive Styling ──────────────────────────────────────── */
+/* Page 1: only disciplines + name / email */
+.collapsed .colsSecondary,
+.collapsed .bottomRow {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .footer {
-    padding: 8px 14px 8px 14px;
-  }
-
-  .disciplineRow {
-    gap: 4px;
-    margin-bottom: 4px;
+    padding: 8px 14px;
   }
 
   .disciplineLeft,
@@ -310,31 +289,26 @@
     font-size: 9.5px;
   }
 
-  .contentGrid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-top: 4px;
+  .contentArea,
+  .bottomRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .colAuthor {
+    grid-column: 1 / -1;
+  }
+
+  .bottomCopyright {
+    grid-column: 1 / -1;
   }
 
   .authorName {
     font-size: 10px;
   }
 
-  .authorEmail {
-    font-size: 9.5px;
-  }
-
-  .bottomRow {
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    align-items: center;
-  }
-
-  .bottomCopyright {
-    grid-column: span 2;
-    font-size: 9px;
-  }
-
+  .authorEmail,
+  .footerLink,
   .bottomDate,
   .bottomClock,
   .topPageBtn {

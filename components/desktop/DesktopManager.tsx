@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import MacWindow from "./MacWindow";
 import AboutWindow from "./AboutWindow";
@@ -10,6 +10,8 @@ import DesktopFooter from "./DesktopFooter";
 import styles from "./DesktopManager.module.css";
 
 export type WindowId = "about" | "cv" | "work";
+
+const RTF_ICON = "/assets/homepage/about-me.png";
 
 interface WindowState {
   isOpen: boolean;
@@ -25,32 +27,31 @@ export interface DesktopManagerProps {
 
 export default function DesktopManager({
   initialOpenWindow = null,
-  initialSlug = null,
 }: DesktopManagerProps) {
   const [windows, setWindows] = useState<Record<WindowId, WindowState>>({
     about: {
       isOpen: initialOpenWindow === "about",
       isMinimized: false,
       isMaximized: false,
-      zIndex: initialOpenWindow === "about" ? 20 : 10,
+      zIndex: initialOpenWindow === "about" ? 220 : 200,
     },
     cv: {
       isOpen: initialOpenWindow === "cv",
       isMinimized: false,
       isMaximized: false,
-      zIndex: initialOpenWindow === "cv" ? 20 : 10,
+      zIndex: initialOpenWindow === "cv" ? 220 : 200,
     },
     work: {
       isOpen: initialOpenWindow === "work",
       isMinimized: false,
       isMaximized: false,
-      zIndex: initialOpenWindow === "work" ? 20 : 10,
+      zIndex: initialOpenWindow === "work" ? 220 : 200,
     },
   });
 
   const [activeWindowId, setActiveWindowId] = useState<WindowId | null>(initialOpenWindow);
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(initialSlug);
-  const [highestZIndex, setHighestZIndex] = useState<number>(30);
+  const [highestZIndex, setHighestZIndex] = useState<number>(220);
+  const [footerOverlay, setFooterOverlay] = useState(false);
 
   const focusWindow = (id: WindowId) => {
     setActiveWindowId(id);
@@ -68,10 +69,7 @@ export default function DesktopManager({
     });
   };
 
-  const openWindow = (id: WindowId, slug?: string | null) => {
-    if (id === "work" && slug !== undefined) {
-      setSelectedSlug(slug);
-    }
+  const openWindow = (id: WindowId) => {
     setHighestZIndex((prev) => {
       const nextZ = prev + 1;
       setWindows((w) => ({
@@ -154,22 +152,67 @@ export default function DesktopManager({
 
   const isAnyWindowOpen = Object.values(windows).some((w) => w.isOpen && !w.isMinimized);
 
+  const closeAllOpenWindows = () => {
+    setWindows((w) => {
+      const next = { ...w };
+      (Object.keys(next) as WindowId[]).forEach((id) => {
+        if (next[id].isOpen) {
+          next[id] = { ...next[id], isOpen: false, isMinimized: false };
+        }
+      });
+      return next;
+    });
+    setActiveWindowId(null);
+  };
+
+  const isBackgroundTarget = (el: EventTarget | null) => {
+    if (!(el instanceof HTMLElement)) return false;
+    if (el.closest("[data-mac-window]")) return false;
+    if (el.closest("[data-desktop-footer]")) return false;
+    if (el.closest("[data-desktop-icon]")) return false;
+    return true;
+  };
+
+  const backgroundCloseIntentRef = useRef(false);
+
+  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    backgroundCloseIntentRef.current = isBackgroundTarget(e.target);
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isAnyWindowOpen || !backgroundCloseIntentRef.current) return;
+    if (!isBackgroundTarget(e.target)) return;
+    closeAllOpenWindows();
+  };
+
 
   return (
-    <div className={styles.desktopCanvas}>
+    <div
+      className={styles.desktopCanvas}
+      onMouseDown={handleCanvasMouseDown}
+      onClick={handleCanvasClick}
+    >
       {/* Desktop Icons Layer */}
-      <div className={`${styles.desktopIconsLayer} ${isAnyWindowOpen ? styles.dimmed : ""}`}>
+      <div
+        className={`${styles.desktopIconsLayer} ${isAnyWindowOpen ? styles.dimmed : ""} ${
+          footerOverlay ? styles.ghosted : ""
+        }`}
+      >
         <button
           type="button"
+          data-desktop-icon
           className={`${styles.desktopIcon} ${
             activeWindowId === "about" && windows.about.isOpen ? styles.desktopIconSelected : ""
           }`}
-          onClick={() => openWindow("about")}
+          onClick={(e) => {
+            e.stopPropagation();
+            openWindow("about");
+          }}
         >
           <div className={styles.iconWrapper}>
             <Image
-              src="/assets/homepage/about-me.png"
-              alt="About Me"
+              src={RTF_ICON}
+              alt="about me.rtf"
               width={88}
               height={88}
               priority
@@ -181,15 +224,19 @@ export default function DesktopManager({
 
         <button
           type="button"
+          data-desktop-icon
           className={`${styles.desktopIcon} ${
             activeWindowId === "cv" && windows.cv.isOpen ? styles.desktopIconSelected : ""
           }`}
-          onClick={() => openWindow("cv")}
+          onClick={(e) => {
+            e.stopPropagation();
+            openWindow("cv");
+          }}
         >
           <div className={styles.iconWrapper}>
             <Image
-              src="/assets/homepage/Asset 2.svg"
-              alt="CV"
+              src={RTF_ICON}
+              alt="cv.rtf"
               width={88}
               height={88}
               priority
@@ -201,10 +248,14 @@ export default function DesktopManager({
 
         <button
           type="button"
+          data-desktop-icon
           className={`${styles.desktopIcon} ${
             activeWindowId === "work" && windows.work.isOpen ? styles.desktopIconSelected : ""
           }`}
-          onClick={() => openWindow("work")}
+          onClick={(e) => {
+            e.stopPropagation();
+            openWindow("work");
+          }}
         >
           <div className={styles.iconWrapper}>
             <Image
@@ -223,7 +274,7 @@ export default function DesktopManager({
       {/* About Window */}
       <MacWindow
         id="about"
-        title="about me"
+        title="About me"
         variant="about"
         isOpen={windows.about.isOpen}
         isMinimized={windows.about.isMinimized}
@@ -231,7 +282,7 @@ export default function DesktopManager({
         isActive={activeWindowId === "about"}
         zIndex={windows.about.zIndex}
         initialPosition={{ x: 60, y: 55 }}
-        initialSize={{ width: 550, height: 740 }}
+        initialSize={{ width: 1040, height: 520 }}
         onClose={() => closeWindow("about")}
         onMinimize={() => minimizeWindow("about")}
         onMaximize={() => maximizeWindow("about")}
@@ -263,30 +314,29 @@ export default function DesktopManager({
       {/* Work Volume Window */}
       <MacWindow
         id="work"
-        title="Work Volume — Architecture &amp; Research"
-        badge="Volume"
-        iconSrc="/assets/homepage/work-volume.png"
+        title="Work Volume"
+        variant="work"
         isOpen={windows.work.isOpen}
         isMinimized={windows.work.isMinimized}
         isMaximized={windows.work.isMaximized}
         isActive={activeWindowId === "work"}
         zIndex={windows.work.zIndex}
-        initialPosition={{ x: 100, y: 65 }}
-        initialSize={{ width: 1060, height: 740 }}
+        initialPosition={{ x: 80, y: 40 }}
+        initialSize={{ width: 1100, height: 760 }}
         onClose={() => closeWindow("work")}
         onMinimize={() => minimizeWindow("work")}
         onMaximize={() => maximizeWindow("work")}
         onFocus={() => focusWindow("work")}
       >
-        <WorkWindow
-          selectedSlug={selectedSlug}
-          onSelectProject={(slug) => setSelectedSlug(slug)}
-        />
+        <WorkWindow />
       </MacWindow>
 
 
-      {/* Interactive Elastic Stretching Footer Bar */}
-      <DesktopFooter onOpenWindow={openWindow} />
+      <DesktopFooter
+        onOpenWindow={openWindow}
+        isWindowOpen={isAnyWindowOpen}
+        onOverlayChange={setFooterOverlay}
+      />
     </div>
   );
 }

@@ -5,44 +5,87 @@ import styles from "./DesktopFooter.module.css";
 
 interface DesktopFooterProps {
   onOpenWindow?: (id: "about" | "cv" | "work", slug?: string | null) => void;
+  isWindowOpen?: boolean;
+  onOverlayChange?: (active: boolean) => void;
 }
 
-export default function DesktopFooter({ onOpenWindow }: DesktopFooterProps) {
-  // Footer state: collapsed (Page 1), expanded (Page 2), or stretching (Page 4)
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+export default function DesktopFooter({
+  onOpenWindow,
+  isWindowOpen = false,
+  onOverlayChange,
+}: DesktopFooterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [stretchHeight, setStretchHeight] = useState<number | null>(null);
-  const [isReleasing, setIsReleasing] = useState<boolean>(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [currentTime, setCurrentTime] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+  const [viewportH, setViewportH] = useState(800);
 
-  // Time & Date state
-  const [currentTime, setCurrentTime] = useState<string>("");
-  const [currentDate, setCurrentDate] = useState<string>("");
-
-  // Refs for tracking wheel / gesture momentum
-  const overscrollYRef = useRef<number>(0);
-  const releaseTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const touchStartYRef = useRef<number>(0);
+  const overscrollYRef = useRef(0);
+  const touchStartYRef = useRef(0);
+  const touchBaseStretchRef = useRef(0);
+  const isExpandedRef = useRef(false);
+  const stretchHeightRef = useRef<number | null>(null);
+  const isWindowOpenRef = useRef(isWindowOpen);
   const footerRef = useRef<HTMLElement>(null);
+  const releaseTimerRef = useRef<number | null>(null);
+  const gradientXRef = useRef(48);
+  const gradientTargetRef = useRef(48);
+  const gradientRafRef = useRef<number | null>(null);
+  const gradientHoverRef = useRef(false);
+  const isReleasingRef = useRef(false);
+  const lastInputAtRef = useRef(0);
+  const stretchRafRef = useRef<number | null>(null);
+  const displayHeightRef = useRef(0);
+  const expandedHeightRef = useRef(200);
+  const maxStretchHeightRef = useRef(600);
+  const collapseIntentRef = useRef(0);
+  const touchHoldingRef = useRef(false);
+  const tickStretchRef = useRef<() => void>(() => {});
+  const [footerBoxH, setFooterBoxH] = useState(80);
+  const [isReleasing, setIsReleasing] = useState(false);
 
-  // Constants (px)
-  const COLLAPSED_HEIGHT = 62; // Page 1 height
-  const EXPANDED_HEIGHT = 152; // Page 2 height
+  const COLLAPSED_RATIO = 0.095;
+  const EXPANDED_RATIO = 0.22;
+  const STRETCHED_RATIO = 0.753;
+  const DAMPENING = 0.32;
+  const RELEASE_IDLE_MS = 520;
+  const FOLLOW_EASE = 0.18;
+  const RELEASE_EASE = 0.08;
+  const WHEEL_TICK_CAP = 72;
+  const TOP_HOLD_PX = 10;
 
-  // Real-time clock and formatted date
+  const collapsedHeight = Math.max(78, Math.round(viewportH * COLLAPSED_RATIO));
+  const expandedHeight = Math.max(200, Math.round(viewportH * EXPANDED_RATIO));
+  const maxStretchHeight = Math.round(viewportH * STRETCHED_RATIO);
+
+  isExpandedRef.current = isExpanded;
+  stretchHeightRef.current = stretchHeight;
+  isWindowOpenRef.current = isWindowOpen;
+  expandedHeightRef.current = expandedHeight;
+  maxStretchHeightRef.current = maxStretchHeight;
+
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const sync = () => setFooterBoxH(el.getBoundingClientRect().height);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [isExpanded, stretchHeight]);
+
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date();
-
-      // Time: "18 : 40 : 44"
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const seconds = String(now.getSeconds()).padStart(2, "0");
       setCurrentTime(`${hours} : ${minutes} : ${seconds}`);
 
-      // Date: "08 september 2026"
       const day = String(now.getDate()).padStart(2, "0");
       const month = now.toLocaleString("en-US", { month: "long" }).toLowerCase();
-      const year = now.getFullYear();
-      setCurrentDate(`${day} ${month} ${year}`);
+      setCurrentDate(`${day} ${month} ${now.getFullYear()}`);
     };
 
     updateDateTime();
@@ -50,203 +93,466 @@ export default function DesktopFooter({ onOpenWindow }: DesktopFooterProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Trigger smooth spring release from Page 4 stretch back to Page 2
-  const triggerRelease = useCallback(() => {
-    setIsReleasing(true);
-    overscrollYRef.current = 0;
-    setStretchHeight(null);
-
-    // Reset release transition flag after animation finishes
-    setTimeout(() => {
-      setIsReleasing(false);
-    }, 700);
+  useEffect(() => {
+    const syncViewport = () => setViewportH(window.innerHeight);
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
   }, []);
 
-  // Wheel event listener for viewport
+  const clearReleaseTimer = useCallback(() => {
+    if (releaseTimerRef.current !== null) {
+      window.clearTimeout(releaseTimerRef.current);
+      releaseTimerRef.current = null;
+    }
+  }, []);
+
+  const stopStretchLoop = useCallback(() => {
+    if (stretchRafRef.current !== null) {
+      window.cancelAnimationFrame(stretchRafRef.current);
+      stretchRafRef.current = null;
+    }
+  }, []);
+
+  const heightFromExtra = useCallback((extra: number) => {
+    const expanded = expandedHeightRef.current;
+    const range = Math.max(1, maxStretchHeightRef.current - expanded);
+    const raw = Math.max(0, extra) * DAMPENING;
+    return expanded + range * (1 - Math.exp(-raw / range));
+  }, []);
+
+  const extraFromHeight = useCallback((h: number) => {
+    const expanded = expandedHeightRef.current;
+    const range = Math.max(1, maxStretchHeightRef.current - expanded);
+    const t = Math.min(0.999, Math.max(0, (h - expanded) / range));
+    return (-range / DAMPENING) * Math.log(1 - t);
+  }, []);
+
+  const collapseToRest = useCallback(() => {
+    clearReleaseTimer();
+    stopStretchLoop();
+    overscrollYRef.current = 0;
+    collapseIntentRef.current = 0;
+    displayHeightRef.current = 0;
+    isReleasingRef.current = false;
+    setIsReleasing(false);
+    setStretchHeight(null);
+    setIsExpanded(false);
+    setIsAnimating(true);
+    window.setTimeout(() => setIsAnimating(false), 700);
+  }, [clearReleaseTimer, stopStretchLoop]);
+
+  const expandToBar = useCallback(() => {
+    clearReleaseTimer();
+    stopStretchLoop();
+    overscrollYRef.current = 0;
+    collapseIntentRef.current = 0;
+    displayHeightRef.current = expandedHeightRef.current;
+    isReleasingRef.current = false;
+    setIsReleasing(false);
+    setStretchHeight(null);
+    setIsExpanded(true);
+    setIsAnimating(true);
+    window.setTimeout(() => setIsAnimating(false), 700);
+  }, [clearReleaseTimer, stopStretchLoop]);
+
+  const startStretchLoop = useCallback(() => {
+    if (stretchRafRef.current !== null) return;
+    stretchRafRef.current = window.requestAnimationFrame(() => {
+      tickStretchRef.current();
+    });
+  }, []);
+
+  tickStretchRef.current = () => {
+    const now = performance.now();
+    const expanded = expandedHeightRef.current;
+    const maxH = maxStretchHeightRef.current;
+    if (touchHoldingRef.current) {
+      lastInputAtRef.current = now;
+    }
+    const idle = now - lastInputAtRef.current;
+
+    if (
+      !isReleasingRef.current &&
+      !touchHoldingRef.current &&
+      idle >= RELEASE_IDLE_MS &&
+      (displayHeightRef.current > expanded + 1 || overscrollYRef.current > 0)
+    ) {
+      isReleasingRef.current = true;
+      overscrollYRef.current = 0;
+      setIsReleasing(true);
+    }
+
+    let target = isReleasingRef.current
+      ? expanded
+      : Math.min(maxH, heightFromExtra(overscrollYRef.current));
+
+    if (!isReleasingRef.current && idle < RELEASE_IDLE_MS && target >= maxH - TOP_HOLD_PX) {
+      target = maxH;
+      overscrollYRef.current = Math.max(overscrollYRef.current, extraFromHeight(maxH));
+    }
+
+    const ease = isReleasingRef.current ? RELEASE_EASE : FOLLOW_EASE;
+    const current = displayHeightRef.current || expanded;
+    let next = current + (target - current) * ease;
+    if (Math.abs(target - next) < 0.35) next = target;
+    displayHeightRef.current = next;
+
+    const rounded = Math.round(next);
+    if (stretchHeightRef.current !== rounded) {
+      setStretchHeight(rounded);
+    }
+
+    const settledLow = next <= expanded + 0.5;
+    if (isReleasingRef.current && settledLow) {
+      stretchRafRef.current = null;
+      displayHeightRef.current = expanded;
+      overscrollYRef.current = 0;
+      isReleasingRef.current = false;
+      setStretchHeight(null);
+      setIsReleasing(false);
+      setIsAnimating(false);
+      return;
+    }
+
+    stretchRafRef.current = window.requestAnimationFrame(() => {
+      tickStretchRef.current();
+    });
+  };
+
+  const absorbStretchDelta = useCallback(
+    (delta: number) => {
+      if (isWindowOpenRef.current) return;
+
+      lastInputAtRef.current = performance.now();
+      collapseIntentRef.current = 0;
+
+      if (!isExpandedRef.current) {
+        isExpandedRef.current = true;
+        setIsExpanded(true);
+        setIsAnimating(false);
+      }
+
+      if (displayHeightRef.current < collapsedHeight) {
+        displayHeightRef.current = footerRef.current?.getBoundingClientRect().height ?? collapsedHeight;
+      }
+
+      if (isReleasingRef.current) {
+        isReleasingRef.current = false;
+        setIsReleasing(false);
+        overscrollYRef.current = extraFromHeight(displayHeightRef.current);
+      }
+
+      const maxH = maxStretchHeightRef.current;
+      const nextExtra = Math.max(0, overscrollYRef.current + delta);
+      const nextHeight = heightFromExtra(nextExtra);
+
+      if (delta > 0 && nextHeight >= maxH - TOP_HOLD_PX) {
+        overscrollYRef.current = extraFromHeight(maxH);
+      } else {
+        overscrollYRef.current = nextExtra;
+      }
+
+      startStretchLoop();
+    },
+    [collapsedHeight, extraFromHeight, heightFromExtra, startStretchLoop]
+  );
+
+  const applyGradientCenter = useCallback((x: number) => {
+    footerRef.current?.style.setProperty("--g-center", `${x}%`);
+  }, []);
+
+  const tickGradient = useCallback(() => {
+    const target = gradientHoverRef.current ? gradientTargetRef.current : 48;
+    const ease = gradientHoverRef.current ? 0.35 : 0.12;
+    const next = gradientXRef.current + (target - gradientXRef.current) * ease;
+    if (Math.abs(target - next) < 0.08) {
+      gradientXRef.current = target;
+      applyGradientCenter(target);
+      gradientRafRef.current = null;
+      return;
+    }
+    gradientXRef.current = next;
+    applyGradientCenter(next);
+    gradientRafRef.current = window.requestAnimationFrame(tickGradient);
+  }, [applyGradientCenter]);
+
+  const startGradientTick = useCallback(() => {
+    if (gradientRafRef.current === null) {
+      gradientRafRef.current = window.requestAnimationFrame(tickGradient);
+    }
+  }, [tickGradient]);
+
   useEffect(() => {
+    return () => {
+      if (gradientRafRef.current !== null) {
+        window.cancelAnimationFrame(gradientRafRef.current);
+      }
+      if (stretchRafRef.current !== null) {
+        window.cancelAnimationFrame(stretchRafRef.current);
+      }
+    };
+  }, []);
+
+  const handleFooterMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 100;
+    gradientHoverRef.current = true;
+    gradientTargetRef.current = Math.min(100, Math.max(0, x));
+    startGradientTick();
+  };
+
+  const handleFooterMouseLeave = () => {
+    gradientHoverRef.current = false;
+    gradientTargetRef.current = 48;
+    startGradientTick();
+  };
+
+  useEffect(() => {
+    if (!isWindowOpen) return;
+    stopStretchLoop();
+    overscrollYRef.current = 0;
+    isReleasingRef.current = false;
+    setIsReleasing(false);
+    setStretchHeight(null);
+  }, [isWindowOpen, stopStretchLoop]);
+
+  useEffect(() => {
+    const overlaying =
+      !isWindowOpen &&
+      (isReleasing || (stretchHeight !== null && stretchHeight > expandedHeight + 24));
+    onOverlayChange?.(overlaying);
+  }, [isReleasing, isWindowOpen, stretchHeight, expandedHeight, onOverlayChange]);
+
+  useEffect(() => {
+    const normalizeWheelDelta = (e: WheelEvent) => {
+      let y = e.deltaY;
+      if (e.deltaMode === 1) y *= 16;
+      else if (e.deltaMode === 2) y *= window.innerHeight * 0.7;
+      return Math.max(-WHEEL_TICK_CAP, Math.min(WHEEL_TICK_CAP, y));
+    };
+
     const handleWheel = (e: WheelEvent) => {
-      // If user scrolls inside an open window modal content, allow normal window scroll
-      const target = e.target as HTMLElement;
+      const target = e.target as HTMLElement | null;
       if (
-        target.closest("[data-window-content]") ||
-        target.closest("pre") ||
-        target.closest(".windowContent")
+        target &&
+        typeof target.closest === "function" &&
+        (target.closest("[data-window-content]") ||
+          target.closest("pre") ||
+          target.closest("[data-mac-window]"))
       ) {
         return;
       }
 
-      const delta = e.deltaY;
-      const maxHeight = window.innerHeight * 0.70; // 70% of screen height
+      const delta = normalizeWheelDelta(e);
+      if (delta === 0) return;
+
+      const expanded = isExpandedRef.current;
+      const windowOpen = isWindowOpenRef.current;
+      const maxH = maxStretchHeightRef.current;
+      const stretching =
+        stretchHeightRef.current !== null ||
+        overscrollYRef.current > 0 ||
+        isReleasingRef.current ||
+        displayHeightRef.current > expandedHeightRef.current + 1;
 
       if (delta > 0) {
-        // Scrolling DOWN
-        if (!isExpanded) {
-          // Page 1 -> Page 2
-          setIsExpanded(true);
-          overscrollYRef.current = 0;
-        } else {
-          // Page 2 -> Page 4 (Elastic stretching)
-          if (releaseTimerRef.current) {
-            clearTimeout(releaseTimerRef.current);
-          }
-          setIsReleasing(false);
+        e.preventDefault();
+        if (windowOpen) return;
+        absorbStretchDelta(delta);
+        return;
+      }
 
-          // Dampening resistance curve
-          overscrollYRef.current += delta;
-          const dampening = 0.42;
-          const calculatedHeight = Math.min(
-            maxHeight,
-            EXPANDED_HEIGHT + overscrollYRef.current * dampening
-          );
-
-          setStretchHeight(calculatedHeight);
-
-          // Debounce: when user stops scrolling down, release smoothly back to Page 2
-          releaseTimerRef.current = setTimeout(() => {
-            triggerRelease();
-          }, 180);
+      if (stretching) {
+        e.preventDefault();
+        if (
+          !isReleasingRef.current &&
+          displayHeightRef.current >= maxH - TOP_HOLD_PX
+        ) {
+          lastInputAtRef.current = performance.now();
+          return;
         }
-      } else if (delta < 0) {
-        // Scrolling UP
-        if (stretchHeight !== null && stretchHeight > EXPANDED_HEIGHT) {
-          // If stretching, reduce stretch
-          overscrollYRef.current = Math.max(0, overscrollYRef.current + delta);
-          const calculatedHeight = Math.max(
-            EXPANDED_HEIGHT,
-            EXPANDED_HEIGHT + overscrollYRef.current * 0.42
-          );
-          setStretchHeight(calculatedHeight === EXPANDED_HEIGHT ? null : calculatedHeight);
-        } else if (isExpanded) {
-          // From Page 2 back to Page 1
-          if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current);
-          triggerRelease();
-          setIsExpanded(false);
+        absorbStretchDelta(delta);
+        return;
+      }
+
+      if (expanded && !windowOpen) {
+        e.preventDefault();
+        collapseIntentRef.current += -delta;
+        if (collapseIntentRef.current > 90) {
+          collapseToRest();
         }
       }
     };
 
-    window.addEventListener("wheel", handleWheel, { passive: true });
+    window.addEventListener("wheel", handleWheel, { passive: false });
     return () => {
       window.removeEventListener("wheel", handleWheel);
-      if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current);
+      clearReleaseTimer();
     };
-  }, [isExpanded, stretchHeight, triggerRelease]);
+  }, [absorbStretchDelta, clearReleaseTimer, collapseToRest]);
 
-  // Touch gesture handling (mobile/touch devices)
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
+      touchHoldingRef.current = true;
       touchStartYRef.current = e.touches[0].clientY;
+      touchBaseStretchRef.current = overscrollYRef.current;
+      lastInputAtRef.current = performance.now();
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      const currentY = e.touches[0].clientY;
-      const deltaY = touchStartYRef.current - currentY; // positive = swipe up (scroll down)
-      const maxHeight = window.innerHeight * 0.70;
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        typeof target.closest === "function" &&
+        (target.closest("[data-window-content]") || target.closest("[data-mac-window]"))
+      ) {
+        return;
+      }
 
-      if (deltaY > 10) {
-        if (!isExpanded) {
+      const deltaY = touchStartYRef.current - e.touches[0].clientY;
+      const expanded = isExpandedRef.current;
+      const windowOpen = isWindowOpenRef.current;
+      const stretching =
+        stretchHeightRef.current !== null ||
+        overscrollYRef.current > 0 ||
+        isReleasingRef.current;
+
+      if (deltaY > 8) {
+        e.preventDefault();
+        if (windowOpen) return;
+        lastInputAtRef.current = performance.now();
+        if (!isExpandedRef.current) {
+          isExpandedRef.current = true;
           setIsExpanded(true);
-        } else {
-          setIsReleasing(false);
-          const dampening = 0.55;
-          const extra = Math.max(0, deltaY - 30);
-          const calculatedHeight = Math.min(
-            maxHeight,
-            EXPANDED_HEIGHT + extra * dampening
-          );
-          setStretchHeight(calculatedHeight);
+          setIsAnimating(false);
         }
-      } else if (deltaY < -40 && isExpanded && stretchHeight === null) {
-        setIsExpanded(false);
+        if (displayHeightRef.current < collapsedHeight) {
+          displayHeightRef.current =
+            footerRef.current?.getBoundingClientRect().height ?? collapsedHeight;
+        }
+        if (isReleasingRef.current) {
+          isReleasingRef.current = false;
+          setIsReleasing(false);
+        }
+        const maxH = maxStretchHeightRef.current;
+        const nextExtra = Math.max(0, touchBaseStretchRef.current + deltaY - 8);
+        const nextHeight = heightFromExtra(nextExtra);
+        overscrollYRef.current =
+          nextHeight >= maxH - TOP_HOLD_PX ? extraFromHeight(maxH) : nextExtra;
+        startStretchLoop();
+      } else if (stretching && deltaY < -12) {
+        e.preventDefault();
+        lastInputAtRef.current = performance.now();
+        if (displayHeightRef.current >= maxStretchHeightRef.current - TOP_HOLD_PX) {
+          return;
+        }
+        overscrollYRef.current = Math.max(0, touchBaseStretchRef.current + deltaY);
+        startStretchLoop();
+      } else if (expanded && !windowOpen && !stretching && deltaY < -48) {
+        collapseToRest();
       }
     };
 
     const handleTouchEnd = () => {
-      if (stretchHeight !== null) {
-        triggerRelease();
-      }
+      touchHoldingRef.current = false;
+      lastInputAtRef.current = performance.now();
+      startStretchLoop();
     };
 
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("touchend", handleTouchEnd, { passive: true });
-
+    window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
     return () => {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchEnd);
     };
-  }, [isExpanded, stretchHeight, triggerRelease]);
+  }, [
+    collapsedHeight,
+    collapseToRest,
+    extraFromHeight,
+    heightFromExtra,
+    startStretchLoop,
+  ]);
 
-  // Calculate current height and mouse indicator offset
-  const currentHeight =
-    stretchHeight !== null
-      ? stretchHeight
-      : isExpanded
-      ? EXPANDED_HEIGHT
-      : COLLAPSED_HEIGHT;
+  const isStretching =
+    !isWindowOpen &&
+    (isReleasing || (stretchHeight !== null && stretchHeight > expandedHeight));
+
+  const pillBottom = footerBoxH;
 
   const handleTopPageClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (releaseTimerRef.current) clearTimeout(releaseTimerRef.current);
-    setIsReleasing(true);
-    setStretchHeight(null);
-    setIsExpanded(false);
-    setTimeout(() => setIsReleasing(false), 700);
+    e.stopPropagation();
+    collapseToRest();
   };
 
   const handlePillClick = () => {
-    if (isExpanded) {
-      handleTopPageClick({ preventDefault: () => {} } as React.MouseEvent);
+    if (isStretching || isExpanded) {
+      collapseToRest();
     } else {
-      setIsExpanded(true);
+      expandToBar();
     }
   };
 
+  const handleFooterClick = () => {
+    if (!isExpanded) expandToBar();
+  };
+
+  const footerHeightStyle = stretchHeight !== null
+    ? {
+        height: `${stretchHeight}px`,
+        transition: "none",
+      }
+    : {
+        height: isExpanded ? "auto" : `${collapsedHeight}px`,
+        minHeight: isExpanded ? `${expandedHeight}px` : undefined,
+        transition: "height 450ms cubic-bezier(0.16, 1, 0.3, 1)",
+      };
+
   return (
     <>
-      {/* Floating Mouse Scroll Indicator Pill Icon */}
       <button
         type="button"
+        data-desktop-footer
         className={styles.mouseScrollPill}
         style={{
-          bottom: `${currentHeight + 14}px`,
-          transition: isReleasing ? "bottom 650ms cubic-bezier(0.16, 1, 0.3, 1)" : "bottom 80ms linear",
+          bottom: `${pillBottom + 12}px`,
+          transition: isStretching || isReleasing
+            ? "none"
+            : isAnimating
+              ? "bottom 720ms cubic-bezier(0.16, 1, 0.3, 1)"
+              : "bottom 450ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
         onClick={handlePillClick}
-        aria-label={isExpanded ? "Collapse footer" : "Expand footer / Scroll down"}
-        title={isExpanded ? "Click to collapse (or scroll up)" : "Scroll down to expand footer"}
+        aria-label={isExpanded ? "Collapse footer" : "Expand footer"}
       >
         <span className={styles.mousePillBody}>
           <span className={styles.mouseWheelDot} />
         </span>
       </button>
 
-      {/* Main Gradient Elastic Stretching Footer */}
       <footer
         ref={footerRef}
+        data-desktop-footer
         className={`${styles.footer} ${isExpanded ? styles.expanded : styles.collapsed} ${
-          isReleasing ? styles.releasing : ""
+          isStretching ? styles.stretching : ""
         }`}
-        style={{
-          height: `${currentHeight}px`,
-          transition: isReleasing
-            ? "height 650ms cubic-bezier(0.16, 1, 0.3, 1)"
-            : stretchHeight !== null
-            ? "none"
-            : "height 450ms cubic-bezier(0.16, 1, 0.3, 1)",
-        }}
+        style={footerHeightStyle}
+        onClick={handleFooterClick}
+        onMouseMove={handleFooterMouseMove}
+        onMouseLeave={handleFooterMouseLeave}
       >
-        {/* Top Discipline Row (White text: philosophy / urbanism / technology) */}
         <div className={styles.disciplineRow}>
           <div className={styles.disciplineLeft}>architecture x philosophy</div>
-          <div className={styles.disciplineCenter}>architecture x urbansim</div>
+          <div className={styles.disciplineCenter}>architecture x urbanism</div>
           <div className={styles.disciplineRight}>architecture x technology</div>
         </div>
 
-        {/* Expanded Content Grid (Revealed in Page 2 & Page 4) */}
-        <div className={styles.contentGrid}>
-          {/* Column 1: Author Name & Email */}
+        <div className={styles.contentArea}>
           <div className={styles.colAuthor}>
             <div className={styles.authorName}>
               SEYED JAVAD (aka PAYMAN) TAHGHIGHI JAHROMI
@@ -254,84 +560,87 @@ export default function DesktopFooter({ onOpenWindow }: DesktopFooterProps) {
             <a
               href="mailto:paymantahghighi@gmail.com"
               className={styles.authorEmail}
+              onClick={(e) => e.stopPropagation()}
             >
               paymantahghighi@gmail.com
             </a>
           </div>
 
-          {/* Column 2: Downloads */}
-          <div className={styles.colDownloads}>
-            <div className={styles.sectionHeader}>downloads</div>
-            <div className={styles.linkList}>
-              <a
-                href="/assets/cv/cv.pdf"
-                download="Payman_Tahghighi_Abridged_CV.pdf"
-                className={styles.footerLink}
-              >
-                abridged cv (1-page)
-              </a>
-              <a
-                href="/assets/cv/cv.pdf"
-                download="Payman_Tahghighi_Extended_CV.pdf"
-                className={styles.footerLink}
-              >
-                extended cv (9-pages)
-              </a>
-              <button
-                type="button"
-                onClick={() => onOpenWindow?.("work")}
-                className={`${styles.footerLink} ${styles.linkBtn}`}
-              >
-                abridged portfolio (28-pages)
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenWindow?.("work")}
-                className={`${styles.footerLink} ${styles.linkBtn}`}
-              >
-                extended portfolio (36-pages)
-              </button>
+          <div className={styles.colsSecondary}>
+            <div className={styles.colDownloads}>
+              <div className={styles.sectionHeader}>downloads</div>
+              <div className={styles.linkList}>
+                <a
+                  href="/assets/cv/cv.pdf"
+                  download="Payman_Tahghighi_Abridged_CV.pdf"
+                  className={styles.footerLink}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  abridged cv (1-page)
+                </a>
+                <a
+                  href="/assets/cv/cv.pdf"
+                  download="Payman_Tahghighi_Extended_CV.pdf"
+                  className={styles.footerLink}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  extended cv (9-pages)
+                </a>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenWindow?.("work");
+                  }}
+                  className={`${styles.footerLink} ${styles.linkBtn}`}
+                >
+                  abridged portfolio (28-pages)
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenWindow?.("work");
+                  }}
+                  className={`${styles.footerLink} ${styles.linkBtn}`}
+                >
+                  extended portfolio (36-pages)
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Column 3: Links */}
-          <div className={styles.colLinks}>
-            <div className={styles.sectionHeader}>links</div>
-            <div className={styles.linkList}>
-              <a
-                href="https://instagram.com/paymantahghighi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.footerLink}
-              >
-                instagram
-              </a>
-              <a
-                href="https://linkedin.com/in/paymantahghighi"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.footerLink}
-              >
-                linkedin
-              </a>
+            <div className={styles.colLinks}>
+              <div className={styles.sectionHeader}>links</div>
+              <div className={styles.linkList}>
+                <a
+                  href="https://instagram.com/paymantahghighi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.footerLink}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  instagram
+                </a>
+                <a
+                  href="https://linkedin.com/in/paymantahghighi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.footerLink}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  linkedin
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Bottom Status Bar: Copyright, Date, Clock, Top of Page */}
         <div className={styles.bottomRow}>
-          {/* Bottom Left: Copyright */}
           <div className={styles.bottomCopyright}>
             &copy; 2026 copyright by Seyed Javad Tahghighi Jahromi. all rights reserved.
           </div>
-
-          {/* Bottom Center-Left: Current Date */}
           <div className={styles.bottomDate}>{currentDate || "08 september 2026"}</div>
-
-          {/* Bottom Center-Right: Live Clock */}
           <div className={styles.bottomClock}>{currentTime || "18 : 40 : 44"}</div>
-
-          {/* Bottom Right: Top of the Page action */}
           <div className={styles.bottomTopPage}>
             <button
               type="button"

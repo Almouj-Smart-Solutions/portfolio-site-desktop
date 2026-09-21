@@ -1,4 +1,4 @@
-﻿# dependencies
+# dependencies
 node_modules/
 .pnp
 .pnp.*
@@ -61,3 +61,4 @@ ehthumbs.db
 # local design mockups (not used by the app)
 /page_*.png
 /footer_gradient*.png
+.tmp-pdf-pages/

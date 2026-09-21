@@ -2,27 +2,26 @@
   display: flex;
   flex-direction: column;
   background: transparent;
-  font-family: var(--font-fira), system-ui, sans-serif;
-  font-size: 11px;
-  line-height: 1.48;
-  color: #333333;
+  font-family: var(--font-fira), "Fira Sans", system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.52;
+  color: #1a1a1a;
   user-select: text;
 }
 
 .paragraph {
-  margin: 0 0 13px 0;
-  font-size: 11px;
-  line-height: 1.48;
-  color: #333333;
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  line-height: 1.52;
+  color: #1a1a1a;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
 }
 
 .paragraph:last-child {
   margin-bottom: 0;
 }
 
-/* Theory Rubric Colors */
 .theoryPink {
   color: #f43454;
   font-weight: 500;
@@ -38,22 +37,24 @@
   font-weight: 500;
 }
 
-/* Times New Roman Italic terms */
 .italicTerm {
-  font-family: var(--font-serif), "Times New Roman", Times, serif;
+  font-family: "Times New Roman", Times, serif;
   font-style: italic;
+  font-weight: 400;
+  color: #1a1a1a;
 }
 
-/* Fira Sans Italic */
-.firaItalic {
-  font-family: var(--font-fira), system-ui, sans-serif;
+.accentItalic {
+  font-family: "Times New Roman", Times, serif;
   font-style: italic;
+  font-weight: 400;
+  color: #fb7a04;
 }
 
-/* Underlined Entity terms (Fira Sans Medium underlined) */
 .underlinedEntity {
   font-weight: 500;
   color: #111111;
   text-decoration: underline;
-  text-underline-offset: 2.5px;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 0.7px;
 }

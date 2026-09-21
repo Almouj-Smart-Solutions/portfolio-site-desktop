@@ -1,20 +1,23 @@
 services:
   web:
+    container_name: portfolio-site-dev
     build:
       context: .
       dockerfile: Dockerfile.dev
     volumes:
-      # Mount source code (hot reload)
       - .:/app
-      # Keep node_modules and .next inside the container volume, do NOT overwrite with host
       - /app/node_modules
       - /app/.next
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+    command: ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]
     stdin_open: true
     tty: true
+    restart: unless-stopped
