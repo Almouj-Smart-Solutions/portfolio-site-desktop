@@ -1,0 +1,127 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Site-wide settings ──────────────────────────────────────────────────────
+model SiteSettings {
+  id           Int    @id @default(1)
+  name         String @default("Payman Tahghighi")
+  tagline      String @default("Architect · Researcher · Artist")
+  accentPink   String @default("#F43454")
+  accentOrange String @default("#FB7A04")
+  accentGreen  String @default("#83E01B")
+}
+
+// ── About section ───────────────────────────────────────────────────────────
+model AboutContent {
+  id      Int    @id @default(1)
+  bioHtml String @default("")
+}
+
+model AboutTheory {
+  id       Int    @id @default(autoincrement())
+  label    String
+  color    String
+  position Int    @default(0)
+}
+
+// ── CV section ──────────────────────────────────────────────────────────────
+model CvEducation {
+  id          Int    @id @default(autoincrement())
+  dateRange   String
+  degree      String
+  institution String
+  position    Int    @default(0)
+}
+
+model CvResearchInterest {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  position    Int    @default(0)
+}
+
+model CvAward {
+  id          Int    @id @default(autoincrement())
+  year        String
+  title       String
+  description String
+  position    Int    @default(0)
+}
+
+model CvExperience {
+  id           Int    @id @default(autoincrement())
+  dateRange    String
+  organization String
+  location     String
+  position     Int    @default(0)
+}
+
+// ── Work/Projects section ───────────────────────────────────────────────────
+model Project {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  subtitle    String   @default("")
+  year        Int      @default(2024)
+  projectType String   @default("")
+  role        String   @default("")
+  size        String   @default("")
+  location    String   @default("")
+  status      String   @default("")
+  client      String   @default("")
+  summary     String   @default("")
+  essay       String   @default("")
+  tags        String   @default("[]")
+  published   Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  images      ProjectImage[]
+}
+
+model ProjectImage {
+  id        Int     @id @default(autoincrement())
+  url       String
+  projectId Int
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order     Int     @default(0)
+}
+
+// ── Footer section ──────────────────────────────────────────────────────────
+model FooterContent {
+  id               Int              @id @default(1)
+  authorName       String           @default("SEYED JAVAD (aka PAYMAN) TAHGHIGHI JAHROMI")
+  email            String           @default("paymantahghighi@gmail.com")
+  copyright        String           @default("© 2026 copyright by Seyed Javad Tahghighi Jahromi. all rights reserved.")
+  disciplineLeft   String           @default("architecture x philosophy")
+  disciplineCenter String           @default("architecture x urbanism")
+  disciplineRight  String           @default("architecture x technology")
+  links            FooterLink[]
+  downloads        FooterDownload[]
+}
+
+model FooterLink {
+  id       Int           @id @default(autoincrement())
+  label    String
+  url      String
+  order    Int           @default(0)
+  footerId Int
+  footer   FooterContent @relation(fields: [footerId], references: [id], onDelete: Cascade)
+}
+
+model FooterDownload {
+  id       Int           @id @default(autoincrement())
+  label    String
+  url      String
+  filename String        @default("")
+  order    Int           @default(0)
+  footerId Int
+  footer   FooterContent @relation(fields: [footerId], references: [id], onDelete: Cascade)
+}

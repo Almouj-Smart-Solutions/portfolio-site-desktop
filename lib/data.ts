@@ -23,6 +23,13 @@ Out of research agenda, with a demonstrated history of 50+ professional architec
 His design work volume has been featured on various online platforms such as Archello, Archinect, Architizer, Contemporary Architecture of Shiraz, 2A Architecture and Art Magazine, and Vakawi.`,
 };
 
+function numberedImages(folder: string, count: number, start = 0) {
+  return Array.from({ length: count }, (_, index) => {
+    const number = String(start + index).padStart(2, "0");
+    return `/assets/work/${folder}/${number}.jpg`;
+  });
+}
+
 export const workProjects = [
   {
     slug: "among-community-between-communities",
@@ -41,25 +48,30 @@ export const workProjects = [
 Developed under government tenure with the School Renovation, Development, and Equipping Organization in collaboration with Fars Province Governor Office, it treats architecture as a form of communication — a spatial language through which communities can meet without the usual hard edges of enclosure.
 
 The 7,847 m2 commission in Maharlou, Fars, Iran is designed as a co-learning campus whose built elements are meant to objectify ordinary school parts (wall, court, frame, stair) into space-makers, so that the institution can host more than one community at once.`,
-    images: [
-      "/assets/work/among-community/03.svg",
-      "/assets/work/among-community/04.svg",
-      "/assets/work/among-community/05.svg",
-      "/assets/work/among-community/08.svg",
-      "/assets/work/among-community/09.svg",
-      "/assets/work/among-community/10.svg",
-      "/assets/work/among-community/11.svg",
-      "/assets/work/among-community/12.svg",
-      "/assets/work/among-community/13.svg",
-      "/assets/work/among-community/15.svg",
-      "/assets/work/among-community/16.svg",
-      "/assets/work/among-community/17.svg",
-      "/assets/work/among-community/19.svg",
-      "/assets/work/among-community/20.svg",
-      "/assets/work/among-community/21.svg",
-      "/assets/work/among-community/22.svg",
-    ],
-    imageCount: 16,
+    images: numberedImages("among-community", 23),
+    imageCount: 23,
     tags: ["Artivism", "Education", "Community", "Proxemics"],
+  },
+  {
+    slug: "at-the-threshold-of-not-being-and-being",
+    title: "At the Threshold of Not-Being and Being",
+    subtitle: "Planning as Guardian of Memory and Meaning",
+    year: 2019,
+    projectType: "Competition, Research-Based Design",
+    position: "Architectural Designer and Planner",
+    size: "238 m²",
+    location: "Shiraz, Fars, Iran",
+    status: "Not Realized",
+    client: "Shiraz University, Iran’s Ministry of Science, Research, and Technology, and Iran’s Secretariat of Architectural and Urban Competitions",
+    summary:
+      "This research-based design explores the relationship between internal and external references of a construction in order to raise a solid form to an art form, utilizing the inter-consciousness and inner-consciousness of architecture.",
+    essay: `This research-based university gateway for Shiraz University explores the relationship between internal and external references of a construction in order to raise a solid form to an art form.
+
+The design consists of vertical slabs that read as columns from the front and as surfaces between the city and the university. Place and space open between the slabs so visitors cannot settle on a single reference, producing an architecture of both depth and width along the Eram green axis.
+
+Design: 2019. Research and publication: 2022–2024. Honorable Mention, 2A Continental Architectural Awards (2ACAA) 2024.`,
+    images: numberedImages("at-the-threshold-of-not-being-and-being", 33),
+    imageCount: 33,
+    tags: ["Competition", "Research", "Urbanism", "Gateway"],
   },
 ];

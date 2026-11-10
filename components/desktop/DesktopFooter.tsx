@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import type { FooterView } from "@/lib/portfolio-types";
 import styles from "./DesktopFooter.module.css";
 
 interface DesktopFooterProps {
   onOpenWindow?: (id: "about" | "cv" | "work", slug?: string | null) => void;
   isWindowOpen?: boolean;
   onOverlayChange?: (active: boolean) => void;
+  footer: FooterView;
 }
 
 export default function DesktopFooter({
   onOpenWindow,
   isWindowOpen = false,
   onOverlayChange,
+  footer,
 }: DesktopFooterProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [stretchHeight, setStretchHeight] = useState<number | null>(null);
@@ -547,22 +550,20 @@ export default function DesktopFooter({
         onMouseLeave={handleFooterMouseLeave}
       >
         <div className={styles.disciplineRow}>
-          <div className={styles.disciplineLeft}>architecture x philosophy</div>
-          <div className={styles.disciplineCenter}>architecture x urbanism</div>
-          <div className={styles.disciplineRight}>architecture x technology</div>
+          <div className={styles.disciplineLeft}>{footer.disciplineLeft}</div>
+          <div className={styles.disciplineCenter}>{footer.disciplineCenter}</div>
+          <div className={styles.disciplineRight}>{footer.disciplineRight}</div>
         </div>
 
         <div className={styles.contentArea}>
           <div className={styles.colAuthor}>
-            <div className={styles.authorName}>
-              SEYED JAVAD (aka PAYMAN) TAHGHIGHI JAHROMI
-            </div>
+            <div className={styles.authorName}>{footer.authorName}</div>
             <a
-              href="mailto:paymantahghighi@gmail.com"
+              href={`mailto:${footer.email}`}
               className={styles.authorEmail}
               onClick={(e) => e.stopPropagation()}
             >
-              paymantahghighi@gmail.com
+              {footer.email}
             </a>
           </div>
 
@@ -570,75 +571,56 @@ export default function DesktopFooter({
             <div className={styles.colDownloads}>
               <div className={styles.sectionHeader}>downloads</div>
               <div className={styles.linkList}>
-                <a
-                  href="/assets/cv/cv.pdf"
-                  download="Payman_Tahghighi_Abridged_CV.pdf"
-                  className={styles.footerLink}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  abridged cv (1-page)
-                </a>
-                <a
-                  href="/assets/cv/cv.pdf"
-                  download="Payman_Tahghighi_Extended_CV.pdf"
-                  className={styles.footerLink}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  extended cv (9-pages)
-                </a>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenWindow?.("work");
-                  }}
-                  className={`${styles.footerLink} ${styles.linkBtn}`}
-                >
-                  abridged portfolio (28-pages)
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenWindow?.("work");
-                  }}
-                  className={`${styles.footerLink} ${styles.linkBtn}`}
-                >
-                  extended portfolio (36-pages)
-                </button>
+                {footer.downloads.map((item) =>
+                  item.url ? (
+                    <a
+                      key={item.id}
+                      href={item.url}
+                      download={item.filename || undefined}
+                      className={styles.footerLink}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenWindow?.("work");
+                      }}
+                      className={`${styles.footerLink} ${styles.linkBtn}`}
+                    >
+                      {item.label}
+                    </button>
+                  )
+                )}
               </div>
             </div>
 
             <div className={styles.colLinks}>
               <div className={styles.sectionHeader}>links</div>
               <div className={styles.linkList}>
-                <a
-                  href="https://instagram.com/paymantahghighi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.footerLink}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  instagram
-                </a>
-                <a
-                  href="https://linkedin.com/in/paymantahghighi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.footerLink}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  linkedin
-                </a>
+                {footer.links.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.footerLink}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {item.label}
+                  </a>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         <div className={styles.bottomRow}>
-          <div className={styles.bottomCopyright}>
-            &copy; 2026 copyright by Seyed Javad Tahghighi Jahromi. all rights reserved.
-          </div>
+          <div className={styles.bottomCopyright}>{footer.copyright}</div>
           <div className={styles.bottomDate}>{currentDate || "08 september 2026"}</div>
           <div className={styles.bottomClock}>{currentTime || "18 : 40 : 44"}</div>
           <div className={styles.bottomTopPage}>

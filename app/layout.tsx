@@ -1,6 +1,8 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { Fira_Sans } from "next/font/google";
 import "@/styles/globals.css";
+import { getSiteAccents } from "@/lib/content";
 
 const firaSans = Fira_Sans({
   subsets: ["latin"],
@@ -20,9 +22,16 @@ export const metadata: Metadata = {
   authors: [{ name: "Payman Tahghighi" }],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const accents = await getSiteAccents();
+  const accentStyle = {
+    "--color-pink": accents.pink,
+    "--color-orange": accents.orange,
+    "--color-green": accents.green,
+  } as CSSProperties;
+
   return (
-    <html lang="en" className={firaSans.variable}>
+    <html lang="en" className={firaSans.variable} style={accentStyle}>
       <body>
         <main>{children}</main>
       </body>

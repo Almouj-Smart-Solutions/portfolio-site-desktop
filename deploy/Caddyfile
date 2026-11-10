@@ -1,4 +1,13 @@
-{$SITE_DOMAIN} {
+http://34.18.231.123 {
+	encode gzip
+	reverse_proxy web:3000
+}
+
+www.p.mouj.om {
+	redir https://p.mouj.om{uri} permanent
+}
+
+p.mouj.om {
 	encode gzip
 	reverse_proxy web:3000
 }

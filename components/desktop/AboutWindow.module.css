@@ -22,6 +22,33 @@
   margin-bottom: 0;
 }
 
+.aboutContainer :global(p) {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  line-height: 1.52;
+  color: #1a1a1a;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+
+.aboutContainer :global(p:last-child) {
+  margin-bottom: 0;
+}
+
+.aboutContainer :global(em) {
+  font-family: "Times New Roman", Times, serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.aboutContainer :global(u) {
+  font-weight: 500;
+  color: #111111;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 0.7px;
+}
+
 .theoryPink {
   color: #f43454;
   font-weight: 500;

@@ -7,6 +7,7 @@ import AboutWindow from "./AboutWindow";
 import CvWindow from "./CvWindow";
 import WorkWindow from "./WorkWindow";
 import DesktopFooter from "./DesktopFooter";
+import type { PortfolioContent } from "@/lib/portfolio-types";
 import styles from "./DesktopManager.module.css";
 
 export type WindowId = "about" | "cv" | "work";
@@ -23,10 +24,12 @@ interface WindowState {
 export interface DesktopManagerProps {
   initialOpenWindow?: WindowId | null;
   initialSlug?: string | null;
+  content: PortfolioContent;
 }
 
 export default function DesktopManager({
   initialOpenWindow = null,
+  content,
 }: DesktopManagerProps) {
   const [windows, setWindows] = useState<Record<WindowId, WindowState>>({
     about: {
@@ -288,7 +291,7 @@ export default function DesktopManager({
         onMaximize={() => maximizeWindow("about")}
         onFocus={() => focusWindow("about")}
       >
-        <AboutWindow />
+        <AboutWindow html={content.aboutHtml} />
       </MacWindow>
 
       {/* CV Window */}
@@ -308,7 +311,12 @@ export default function DesktopManager({
         onMaximize={() => maximizeWindow("cv")}
         onFocus={() => focusWindow("cv")}
       >
-        <CvWindow />
+        <CvWindow
+          education={content.education}
+          research={content.research}
+          awards={content.awards}
+          experience={content.experience}
+        />
       </MacWindow>
 
       {/* Work Volume Window */}
@@ -328,11 +336,12 @@ export default function DesktopManager({
         onMaximize={() => maximizeWindow("work")}
         onFocus={() => focusWindow("work")}
       >
-        <WorkWindow />
+        <WorkWindow projects={content.projects} />
       </MacWindow>
 
 
       <DesktopFooter
+        footer={content.footer}
         onOpenWindow={openWindow}
         isWindowOpen={isAnyWindowOpen}
         onOverlayChange={setFooterOverlay}

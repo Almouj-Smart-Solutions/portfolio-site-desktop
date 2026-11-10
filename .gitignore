@@ -24,6 +24,10 @@ dist/
 .env
 .env.*
 !.env.example
+
+# sqlite
+/prisma/*.db
+/prisma/*.db-journal
 *.pem
 *.key
 

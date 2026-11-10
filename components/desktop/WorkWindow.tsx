@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { workProjects } from "@/lib/data";
+import type { WorkProjectView } from "@/lib/portfolio-types";
 import styles from "./WorkWindow.module.css";
 
 const VISIBLE = 5;
@@ -391,14 +391,14 @@ function ProjectCarousel({
   );
 }
 
-export default function WorkWindow() {
+export default function WorkWindow({ projects }: { projects: WorkProjectView[] }) {
   const [zoom, setZoom] = useState<ZoomState | null>(null);
 
   return (
     <div className={styles.workDocument}>
       <hr className={styles.topRule} />
 
-      {workProjects.map((project, index) => (
+      {projects.map((project, index) => (
         <section key={project.slug} className={styles.projectBlock}>
           {index > 0 && <hr className={styles.divider} />}
 
