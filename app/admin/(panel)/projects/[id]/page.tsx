@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminJson } from "@/lib/admin-fetch";
 
@@ -22,6 +22,7 @@ type Project = {
   location: string;
   status: string;
   client: string;
+  teamLabel: string;
   team: string;
   specificRoles: string;
   timeline: string;
@@ -32,22 +33,14 @@ type Project = {
   images: ProjectImage[];
 };
 
-const textFields: { key: keyof Project; label: string }[] = [
-  { key: "title", label: "Title" },
-  { key: "subtitle", label: "Subtitle" },
-  { key: "slug", label: "Slug" },
-  { key: "projectType", label: "Project type" },
-  { key: "architect", label: "Architect in-charge" },
-  { key: "firm", label: "Firm" },
-  { key: "role", label: "Position" },
-  { key: "projectFunction", label: "Project function" },
-  { key: "size", label: "Size" },
-  { key: "location", label: "Location" },
-  { key: "status", label: "Status" },
-  { key: "client", label: "Client" },
-  { key: "team", label: "Team" },
-  { key: "timeline", label: "Timeline" },
-];
+type FieldDef = {
+  key: keyof Project;
+  label: string;
+  multiline?: boolean;
+  rows?: number;
+};
+
+const URL_PATTERN = /(https?:\/\/[^\s<]+[^.,;:!?)\s])/g;
 
 function parseTags(value: string) {
   try {
@@ -58,9 +51,67 @@ function parseTags(value: string) {
   }
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function linkifyPreview(text: string) {
+  return escapeHtml(text).replace(URL_PATTERN, (url) => {
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  rows = 4,
+  hint,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+  rows?: number;
+  hint?: string;
+}) {
+  return (
+    <label className="admin-field">
+      <span>
+        {label}
+        {hint ? <span className="admin-field-hint"> · {hint}</span> : null}
+      </span>
+      {multiline ? (
+        <textarea rows={rows} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)} />
+      ) : (
+        <input value={String(value ?? "")} onChange={(event) => onChange(event.target.value)} />
+      )}
+    </label>
+  );
+}
+
+function MetaPreviewRow({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <p className="project-preview-meta-row">
+      <span className="project-preview-meta-label">{label}</span>{" "}
+      <span
+        className="project-preview-meta-value"
+        dangerouslySetInnerHTML={{ __html: linkifyPreview(value) }}
+      />
+    </p>
+  );
+}
+
 export default function ProjectEditorPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const essayRef = useRef<HTMLTextAreaElement>(null);
   const [project, setProject] = useState<Project | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
@@ -82,6 +133,24 @@ export default function ProjectEditorPage() {
 
   function update(key: keyof Project, value: string | number | boolean) {
     setProject((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  function wrapEssaySelection(kind: "heading" | "body" | "quote") {
+    const el = essayRef.current;
+    if (!el || !project) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = project.essay.slice(start, end).trim() || "…";
+    const className =
+      kind === "heading" ? "essay-heading" : kind === "quote" ? "essay-quote" : "essay-body";
+    const wrapped = `<p class="${className}">${selected}</p>`;
+    const next = `${project.essay.slice(0, start)}${wrapped}${project.essay.slice(end)}`;
+    update("essay", next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const caret = start + wrapped.length;
+      el.setSelectionRange(caret, caret);
+    });
   }
 
   async function onSave(event: FormEvent) {
@@ -106,6 +175,7 @@ export default function ProjectEditorPage() {
         location: project.location,
         status: project.status,
         client: project.client,
+        teamLabel: project.teamLabel,
         team: project.team,
         specificRoles: project.specificRoles,
         timeline: project.timeline,
@@ -168,115 +238,242 @@ export default function ProjectEditorPage() {
     }
   }
 
+  const essayPreview = useMemo(() => {
+    if (!project?.essay) return "";
+    if (/<[a-z][\s\S]*>/i.test(project.essay)) return project.essay;
+    return project.essay
+      .split(/\n\n+/)
+      .map((para) => para.trim())
+      .filter(Boolean)
+      .map((para) => `<p class="essay-body">${escapeHtml(para)}</p>`)
+      .join("");
+  }, [project?.essay]);
+
   if (!project) {
     return error ? <p className="admin-error">{error}</p> : <p className="admin-muted">Loading project…</p>;
   }
 
+  const col2Fields: FieldDef[] = [
+    { key: "projectType", label: "project type:" },
+    { key: "architect", label: "architect in-charge:" },
+    { key: "firm", label: "firm:" },
+    { key: "role", label: "position:" },
+    { key: "projectFunction", label: "project function:" },
+    { key: "awardFeature", label: "award/feature:", multiline: true, rows: 8 },
+    { key: "size", label: "size:" },
+    { key: "location", label: "location:" },
+    { key: "status", label: "status:" },
+    { key: "client", label: "client:", multiline: true, rows: 3 },
+    { key: "teamLabel", label: "team label:" },
+    { key: "team", label: "team value:", multiline: true, rows: 5 },
+    { key: "specificRoles", label: "specific role(s):", multiline: true, rows: 6 },
+    { key: "summary", label: "SUMMARY:", multiline: true, rows: 4 },
+    { key: "timeline", label: "timeline / year line:" },
+  ];
+
+  const sizeLocation = [project.size, project.location].filter(Boolean).join("/");
+
   return (
-    <form className="admin-stack" onSubmit={onSave}>
+    <form className="admin-stack project-editor" onSubmit={onSave}>
       <div className="admin-row" style={{ justifyContent: "space-between" }}>
         <div>
           <h1 className="admin-title">{project.title || "Project"}</h1>
-          <p className="admin-lead">Fields, tags, essay, and images.</p>
-        </div>
-        <button className="admin-btn" type="button" onClick={() => router.push("/admin/projects")}>
-          Back
-        </button>
-      </div>
-
-      <div className="admin-grid">
-        {textFields.map((field) => (
-          <label className="admin-field" key={field.key}>
-            {field.label}
-            <input
-              value={String(project[field.key] ?? "")}
-              onChange={(event) => update(field.key, event.target.value)}
-            />
-          </label>
-        ))}
-        <label className="admin-field">
-          Year
-          <input type="number" value={project.year} onChange={(event) => update("year", Number(event.target.value))} />
-        </label>
-      </div>
-
-      <label className="admin-check">
-        <input
-          type="checkbox"
-          checked={project.published}
-          onChange={(event) => update("published", event.target.checked)}
-        />
-        Published
-      </label>
-
-      <div className="admin-stack">
-        <strong>Tags</strong>
-        <div className="admin-chips">
-          {tags.map((tag) => (
-            <span className="admin-chip" key={tag}>
-              {tag}
-              <button className="admin-btn" type="button" onClick={() => setTags(tags.filter((item) => item !== tag))}>
-                ×
-              </button>
-            </span>
-          ))}
+          <p className="admin-lead">Edit in the same three-column format as the Work window.</p>
         </div>
         <div className="admin-row">
-          <input
-            value={tagDraft}
-            placeholder="Add a tag"
-            onChange={(event) => setTagDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key !== "Enter") return;
-              event.preventDefault();
-              const next = tagDraft.trim();
-              if (!next || tags.includes(next)) return;
-              setTags([...tags, next]);
-              setTagDraft("");
-            }}
-          />
-          <button
-            className="admin-btn"
-            type="button"
-            onClick={() => {
-              const next = tagDraft.trim();
-              if (!next || tags.includes(next)) return;
-              setTags([...tags, next]);
-              setTagDraft("");
-            }}
-          >
-            Add tag
+          <button className="admin-btn" type="button" onClick={() => router.push("/admin/projects")}>
+            Back
+          </button>
+          <button className="admin-btn primary" type="submit" disabled={saving}>
+            {saving ? "Saving…" : "Save project"}
           </button>
         </div>
       </div>
 
-      <label className="admin-field">
-        Award / feature
-        <textarea
-          value={project.awardFeature}
-          onChange={(event) => update("awardFeature", event.target.value)}
-          style={{ minHeight: 160 }}
-        />
-      </label>
-      <label className="admin-field">
-        Specific role(s)
-        <textarea
-          value={project.specificRoles}
-          onChange={(event) => update("specificRoles", event.target.value)}
-          style={{ minHeight: 100 }}
-        />
-      </label>
-      <label className="admin-field">
-        Summary
-        <textarea value={project.summary} onChange={(event) => update("summary", event.target.value)} />
-      </label>
-      <label className="admin-field">
-        Essay
-        <textarea value={project.essay} onChange={(event) => update("essay", event.target.value)} style={{ minHeight: 220 }} />
-      </label>
+      <section className="project-editor-settings admin-card">
+        <div className="admin-grid">
+          <Field label="Slug" value={project.slug} onChange={(value) => update("slug", value)} />
+          <Field
+            label="Year (sorting)"
+            value={project.year}
+            onChange={(value) => update("year", Number(value) || 0)}
+          />
+          <label className="admin-check" style={{ alignSelf: "end", marginBottom: 8 }}>
+            <input
+              type="checkbox"
+              checked={project.published}
+              onChange={(event) => update("published", event.target.checked)}
+            />
+            Published
+          </label>
+        </div>
 
-      <section className="admin-stack">
-        <strong>Images</strong>
+        <div className="admin-stack" style={{ marginTop: 12 }}>
+          <strong>Tags</strong>
+          <div className="admin-chips">
+            {tags.map((tag) => (
+              <span className="admin-chip" key={tag}>
+                {tag}
+                <button className="admin-btn" type="button" onClick={() => setTags(tags.filter((item) => item !== tag))}>
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="admin-row">
+            <input
+              value={tagDraft}
+              placeholder="Add a tag"
+              onChange={(event) => setTagDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                event.preventDefault();
+                const next = tagDraft.trim();
+                if (!next || tags.includes(next)) return;
+                setTags([...tags, next]);
+                setTagDraft("");
+              }}
+            />
+            <button
+              className="admin-btn"
+              type="button"
+              onClick={() => {
+                const next = tagDraft.trim();
+                if (!next || tags.includes(next)) return;
+                setTags([...tags, next]);
+                setTagDraft("");
+              }}
+            >
+              Add tag
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="project-editor-columns">
+        <div className="project-editor-col admin-card">
+          <header className="project-editor-col-head">
+            <span>Column 1</span>
+            <small>title · subtitle</small>
+          </header>
+          <Field
+            label="title"
+            hint="SemiBold"
+            value={project.title}
+            onChange={(value) => update("title", value)}
+          />
+          <Field
+            label="subtitle"
+            hint="Light"
+            value={project.subtitle}
+            onChange={(value) => update("subtitle", value)}
+          />
+        </div>
+
+        <div className="project-editor-col admin-card">
+          <header className="project-editor-col-head">
+            <span>Column 2</span>
+            <small>meta · summary · timeline</small>
+          </header>
+          {col2Fields.map((field) => (
+            <Field
+              key={field.key}
+              label={field.label}
+              hint={field.multiline ? undefined : "Bold label / Light value"}
+              value={String(project[field.key] ?? "")}
+              onChange={(value) => update(field.key, value)}
+              multiline={field.multiline}
+              rows={field.rows}
+            />
+          ))}
+        </div>
+
+        <div className="project-editor-col admin-card">
+          <header className="project-editor-col-head">
+            <span>Column 3</span>
+            <small>brief · research essay</small>
+          </header>
+          <div className="admin-row">
+            <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("heading")}>
+              Wrap as heading
+            </button>
+            <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("body")}>
+              Wrap as body
+            </button>
+            <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("quote")}>
+              Wrap as quote
+            </button>
+          </div>
+          <p className="admin-muted" style={{ marginBottom: 0 }}>
+            Select text, then wrap. Headings = Bold, body = Regular, quote = Light Italic.
+          </p>
+          <label className="admin-field">
+            essay
+            <textarea
+              ref={essayRef}
+              value={project.essay}
+              onChange={(event) => update("essay", event.target.value)}
+              style={{ minHeight: 420 }}
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="project-preview admin-card">
+        <header className="project-editor-col-head">
+          <span>Live preview</span>
+          <small>Work window layout</small>
+        </header>
+
+        {images[0] ? (
+          <div className="project-preview-strip">
+            {images.slice(0, 5).map((image) => (
+              <img key={image.id} src={image.url} alt="" />
+            ))}
+          </div>
+        ) : null}
+
+        <div className="project-preview-columns">
+          <div className="project-preview-col">
+            <p className="project-preview-title">{project.title || "Title"}</p>
+            {project.subtitle ? <p className="project-preview-subtitle">{project.subtitle}</p> : null}
+          </div>
+
+          <div className="project-preview-col">
+            <MetaPreviewRow label="project type:" value={project.projectType} />
+            <MetaPreviewRow label="architect in-charge:" value={project.architect} />
+            <MetaPreviewRow label="firm:" value={project.firm} />
+            <MetaPreviewRow label="position:" value={project.role} />
+            <MetaPreviewRow label="project function:" value={project.projectFunction} />
+            <MetaPreviewRow label="award/feature:" value={project.awardFeature} />
+            <MetaPreviewRow label="size/location:" value={sizeLocation} />
+            <MetaPreviewRow label="status:" value={project.status} />
+            <MetaPreviewRow label="client:" value={project.client} />
+            <MetaPreviewRow label={project.teamLabel || "team:"} value={project.team} />
+            <MetaPreviewRow label="specific role(s):" value={project.specificRoles} />
+            {project.summary ? (
+              <p className="project-preview-summary">
+                <span>SUMMARY:</span> {project.summary}
+              </p>
+            ) : null}
+            {project.timeline ? <p className="project-preview-timeline">{project.timeline}</p> : null}
+          </div>
+
+          <div className="project-preview-col">
+            {essayPreview ? (
+              <div className="project-preview-essay" dangerouslySetInnerHTML={{ __html: essayPreview }} />
+            ) : (
+              <p className="admin-muted">Essay preview appears here.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="admin-stack admin-card">
+        <header className="project-editor-col-head">
+          <span>Images</span>
+          <small>carousel above the three columns</small>
+        </header>
         <label
           className="admin-drop"
           onDragOver={(event) => event.preventDefault()}

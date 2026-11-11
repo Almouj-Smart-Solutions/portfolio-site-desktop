@@ -453,7 +453,7 @@ export default function WorkWindow({ projects }: { projects: WorkProjectView[] }
                 ],
                 ["status:", project.status],
                 ["client:", project.client],
-                ["team:", project.team],
+                [project.teamLabel || "team:", project.team],
                 ["specific role(s):", project.specificRoles],
               ]
                 .filter(([, value]) => Boolean(value))

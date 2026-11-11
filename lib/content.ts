@@ -75,6 +75,7 @@ export async function getPortfolioContent(): Promise<PortfolioContent> {
     location: project.location,
     status: project.status,
     client: project.client,
+    teamLabel: project.teamLabel || "team:",
     team: project.team,
     specificRoles: project.specificRoles,
     timeline: project.timeline,

@@ -40,6 +40,7 @@ export type WorkProjectView = {
   location: string;
   status: string;
   client: string;
+  teamLabel: string;
   team: string;
   specificRoles: string;
   timeline: string;

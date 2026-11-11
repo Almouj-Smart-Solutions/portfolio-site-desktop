@@ -150,6 +150,7 @@ async function main() {
       location: p.location ?? "",
       status: p.status ?? "",
       client: p.client ?? "",
+      teamLabel: p.teamLabel ?? "team:",
       team: p.team ?? "",
       specificRoles: p.specificRoles ?? "",
       timeline: p.timeline ?? "",

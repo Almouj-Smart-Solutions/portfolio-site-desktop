@@ -113,33 +113,58 @@ const thresholdEssay = [
   ),
 ].join("\n");
 
+const amongCommunityEssay = [
+  essayBody(
+    `Originating in local art and rural artisanal craft, this project aims to put architecture into effect as a tool for communication to bring two communities that were initially one and have been separated in recent decades due to political and governmental issues into a closer and more meaningful relationship with each other. Parallel to architecture, the project intrinsically challenges group work during material gathering, tries to wholly involve society in the construction, and at the stage of making use of it, it unbiasedly embraces generational diversity through an educational enfilade. All these three contributions focus on the “construction of place” through social practices, perpetuating a cultural tradition rather than individual experience.`,
+  ),
+  essayBody(
+    `Nestled amid a magnificent rolling countryside, the project consists of two main bodies; a porous plinth and a general volume. The curvilinear plinth is constructed on the wooden beams partially covered with salt residues, while the C-shaped volume is composed of two row constituents itself; a central layer and a peripheral layer. These two are separated by a sequence of columns joined by a spine and a mono-pitched roof on one of its layers. The peripheral layer is closed elevationally and its only apertures are the ribbon windows stretching all the way across one of its facades to frame views toward the lake and its open roof is actually a mediator for the plan's dialogue with the sky. This juxtaposition of filled and emptiness is inverted in the central layer so that this layer is the one that is roofed and its facade is entirely open to reframe the first layer.`,
+  ),
+  essayBody(
+    `Before addressing the two main components that make up the entire building and describing their function, we will consider the site and its role in forming the geometric structure of the volume. The site is generously plain with the exception of two small mountain ranges at the top and bottom, allowing the building to bring in the landscape from all four directions. Although the research that was conducted to plan the procurement of raw materials for constructing the building benefits many areas around the site, such as Shiraz and Kavar cities, its usage is only for people living in Maharlou village and Sarvestan county.`,
+  ),
+  essayBody(
+    `Dressed in two different accents, these building components develop a language in which they stand on the same plan but are counterpointed by each other. In fact, they formally materialize abstract alienation rooted in two communities and continually evolve over time and participation to reflect their problem-solving potential via plan design. They polarize socio-political inequalities through solid and void, alternatively emphasizing the inner programs of each, drawing attention to reciprocity. In one of them, space gives the ability to objects to exist; in the other, objects enable space to be, and in reading this language, the subject gives the meanings of "being" and "becoming" to both.`,
+  ),
+  essayBody(
+    `In both of them, the single sequences of the plan act as the vocabulary of the language and play the role of the most important element of the project, helping other elements, including columns, doors, and curtains, free themselves from the fixed state by turning into space-organizer and space-maker components in the form of ready-mades. From a macroscopic point of view, by arranging and building the classrooms’ boundary using stochastic or definite spatial layouts with these ready-mades, the plan is understood in such a way that the entire structure as an object is manifested in every single sequence of it which is set up, shrunk, expanded, and dismantled with the cooperation of users.`,
+  ),
+  essayBody(
+    `Subsequently, by challenging the principles of proxemics, the project’s microscopic approach seeks to explain how users organize movable and scalable elements into recognizable patterns in plan through forming relationships between themselves. By preparing an educational environement that fosters proximity and connectivity, these patterns are designed in a fluid manner. Despite the lower statistics in population and area, the project takes pride in its exploration by making users notice that the newly formed community based on these relationships is greater than the sum of two communities, a gestalt.`,
+  ),
+  essayBody(
+    `While the project’s personality takes a rigorous look at its downstream and upstream community, its appearance retains an air of ease in its environment and projects a subtle awareness of its context, not just ecological but limnological and meteorological. The school’s roof was originally conceived out of steel. Due to transportation limitations and sustainable considerations, we opted for precast wooden slabs with a raked texture, whose formal language echoes the Local product-selling gazebo’s roof visible everywhere on both sides (communities) of Maharlou.`,
+  ),
+  essayBody(
+    `The research through which we planned to source materials needed for the project was based upon involving 3 groups of society neighboring the site, facilitating geographies of co-working. We considered the impacts of this scheme through a systematic need for social change by enabling a circular material-gathering and -reusing paradigm. So, the results not only re-integrate each individual’s personal space and social space created originally through the proxemics sphere under racial impositions but also lurk in the shadow of waste management and resource recovery as an environmentally preferable alternative to construction.`,
+  ),
+].join("\n");
+
 export const workProjects = [
   {
     slug: "among-community-between-communities",
-    title: "Among Community, Between Communities",
-    subtitle: "Architecture as a Form of Communication",
+    title: "among community, between communities",
+    subtitle: "architecture as a form of communication",
     year: 2023,
-    projectType: "Professional (Government Tenure)",
-    architect: "",
-    firm: "",
-    position: "Architectural Designer and Planner",
-    projectFunction: "",
-    awardFeature: "",
-    size: "7,847 m2",
+    projectType: "professional (government tenure)",
+    architect: "Seyed Javad (aka payman) Tahghighi Jahromi",
+    firm: "-",
+    position: "architectural designer and planner",
+    projectFunction: "school",
+    awardFeature: "-",
+    size: "7,847 m²",
     location: "Maharlou, Fars, Iran",
-    status: "Commissioned to Build",
+    status: "commissioned to build",
     client:
-      "School Renovation, Development, and Equipping Organization in collaboration with Fars Province Governor Office",
-    team: "",
-    specificRoles: "",
-    timeline: "",
+      "School’s Renovation, Development, and Equipping Organization in collaboration with Fars Province Governor Office (community engagement)",
+    teamLabel: "team/stages involved:",
+    team: "(6) Behrouz Esfandiyari (project manager), Nader Kohan (structural designer), Mohammad Mahdi Roshan (urban analyst), Ayat-allah Jamali (Deputy Planning Officer), Ghasem Faridian Sarvestani (Governor)/I personally was responsible for architectural design and planning within technical and architectural department of the Fars Province Governor Office (Sarvestan Branch).",
+    specificRoles:
+      "helping the project manager through phases of schematic design, design documents’ development, construction documents’ development, and management of consultants to deliver the final condition of design; phase 1 outlining; phase 2 detail drawing (with a specification on superbricks details); rendering; urban analysing of two programs within which materials needed for the project was planned to be sourced; research and development on Maharlou Salt Lake and important neighborings’ soil condition and presenting the final results to technical and architectural department.",
+    timeline: "2023",
     summary:
       "This project harnesses the critical imagination to generate communities without boundaries through artivism, providing a more dignified and respectful co-learning environment.",
-    essay: `This project harnesses the critical imagination to generate communities without boundaries through artivism, providing a more dignified and respectful co-learning environment.
-
-Developed under government tenure with the School Renovation, Development, and Equipping Organization in collaboration with Fars Province Governor Office, it treats architecture as a form of communication — a spatial language through which communities can meet without the usual hard edges of enclosure.
-
-The 7,847 m2 commission in Maharlou, Fars, Iran is designed as a co-learning campus whose built elements are meant to objectify ordinary school parts (wall, court, frame, stair) into space-makers, so that the institution can host more than one community at once.`,
+    essay: amongCommunityEssay,
     images: numberedImages("among-community", 23),
     imageCount: 23,
     tags: ["Artivism", "Education", "Community", "Proxemics"],
@@ -160,6 +185,7 @@ The 7,847 m2 commission in Maharlou, Fars, Iran is designed as a co-learning cam
     status: "not realized",
     client:
       "Shiraz University, Iran’s Ministry of Science, Research, and Technology, and Iran’s Secretariat of Architectural and Urban Competitions.",
+    teamLabel: "team:",
     team: "(2) Me and My colleague (Hemn Amani; design technologist at SBU)",
     specificRoles:
       "I was responsible for all stages of initial design through publication, including: conceptualization; design phase; rendering and visualizing; urban analysing; writing; documenting; photography, library- and archive-searching.",

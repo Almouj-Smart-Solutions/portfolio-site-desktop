@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       location: body.location || "",
       status: body.status || "",
       client: body.client || "",
+      teamLabel: body.teamLabel || "team:",
       team: body.team || "",
       specificRoles: body.specificRoles || "",
       timeline: body.timeline || "",

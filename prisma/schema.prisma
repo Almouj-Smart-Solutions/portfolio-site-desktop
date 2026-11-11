@@ -80,6 +80,7 @@ model Project {
   location         String   @default("")
   status           String   @default("")
   client           String   @default("")
+  teamLabel        String   @default("team:")
   team             String   @default("")
   specificRoles    String   @default("")
   timeline         String   @default("")
