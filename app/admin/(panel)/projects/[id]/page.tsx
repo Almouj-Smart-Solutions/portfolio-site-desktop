@@ -13,11 +13,18 @@ type Project = {
   subtitle: string;
   year: number;
   projectType: string;
+  architect: string;
+  firm: string;
   role: string;
+  projectFunction: string;
+  awardFeature: string;
   size: string;
   location: string;
   status: string;
   client: string;
+  team: string;
+  specificRoles: string;
+  timeline: string;
   summary: string;
   essay: string;
   tags: string;
@@ -30,11 +37,16 @@ const textFields: { key: keyof Project; label: string }[] = [
   { key: "subtitle", label: "Subtitle" },
   { key: "slug", label: "Slug" },
   { key: "projectType", label: "Project type" },
-  { key: "role", label: "Role" },
+  { key: "architect", label: "Architect in-charge" },
+  { key: "firm", label: "Firm" },
+  { key: "role", label: "Position" },
+  { key: "projectFunction", label: "Project function" },
   { key: "size", label: "Size" },
   { key: "location", label: "Location" },
   { key: "status", label: "Status" },
   { key: "client", label: "Client" },
+  { key: "team", label: "Team" },
+  { key: "timeline", label: "Timeline" },
 ];
 
 function parseTags(value: string) {
@@ -85,11 +97,18 @@ export default function ProjectEditorPage() {
         slug: project.slug,
         year: Number(project.year),
         projectType: project.projectType,
+        architect: project.architect,
+        firm: project.firm,
         role: project.role,
+        projectFunction: project.projectFunction,
+        awardFeature: project.awardFeature,
         size: project.size,
         location: project.location,
         status: project.status,
         client: project.client,
+        team: project.team,
+        specificRoles: project.specificRoles,
+        timeline: project.timeline,
         summary: project.summary,
         essay: project.essay,
         tags,
@@ -231,6 +250,22 @@ export default function ProjectEditorPage() {
         </div>
       </div>
 
+      <label className="admin-field">
+        Award / feature
+        <textarea
+          value={project.awardFeature}
+          onChange={(event) => update("awardFeature", event.target.value)}
+          style={{ minHeight: 160 }}
+        />
+      </label>
+      <label className="admin-field">
+        Specific role(s)
+        <textarea
+          value={project.specificRoles}
+          onChange={(event) => update("specificRoles", event.target.value)}
+          style={{ minHeight: 100 }}
+        />
+      </label>
       <label className="admin-field">
         Summary
         <textarea value={project.summary} onChange={(event) => update("summary", event.target.value)} />

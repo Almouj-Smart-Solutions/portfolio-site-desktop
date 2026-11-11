@@ -65,25 +65,32 @@ model CvExperience {
 
 // ── Work/Projects section ───────────────────────────────────────────────────
 model Project {
-  id          Int      @id @default(autoincrement())
-  slug        String   @unique
-  title       String
-  subtitle    String   @default("")
-  year        Int      @default(2024)
-  projectType String   @default("")
-  role        String   @default("")
-  size        String   @default("")
-  location    String   @default("")
-  status      String   @default("")
-  client      String   @default("")
-  summary     String   @default("")
-  essay       String   @default("")
-  tags        String   @default("[]")
-  published   Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  images      ProjectImage[]
+  id               Int      @id @default(autoincrement())
+  slug             String   @unique
+  title            String
+  subtitle         String   @default("")
+  year             Int      @default(2024)
+  projectType      String   @default("")
+  architect        String   @default("")
+  firm             String   @default("")
+  role             String   @default("")
+  projectFunction  String   @default("")
+  awardFeature     String   @default("")
+  size             String   @default("")
+  location         String   @default("")
+  status           String   @default("")
+  client           String   @default("")
+  team             String   @default("")
+  specificRoles    String   @default("")
+  timeline         String   @default("")
+  summary          String   @default("")
+  essay            String   @default("")
+  tags             String   @default("[]")
+  published        Boolean  @default(true)
+  order            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  images           ProjectImage[]
 }
 
 model ProjectImage {

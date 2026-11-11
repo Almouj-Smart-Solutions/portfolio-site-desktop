@@ -127,30 +127,62 @@ async function main() {
   console.log("  ✓ CV Experience");
 
   // ── Work Projects ───────────────────────────────────────────────────────
+  // Default: create missing projects only (keeps admin edits on live).
+  // Set SEED_FORCE=1 once to overwrite project text/images from lib/data.ts.
+  const forceSeed = process.env.SEED_FORCE === "1" || process.env.SEED_FORCE === "true";
+
   for (const [i, p] of workProjects.entries()) {
-    const existing = await prisma.project.findUnique({ where: { slug: p.slug } });
+    const existing = await prisma.project.findUnique({
+      where: { slug: p.slug },
+      include: { images: true },
+    });
     const data = {
       title: p.title,
       subtitle: p.subtitle ?? "",
       year: p.year,
       projectType: p.projectType ?? "",
+      architect: p.architect ?? "",
+      firm: p.firm ?? "",
       role: p.position ?? "",
+      projectFunction: p.projectFunction ?? "",
+      awardFeature: p.awardFeature ?? "",
       size: p.size ?? "",
       location: p.location ?? "",
       status: p.status ?? "",
       client: p.client ?? "",
+      team: p.team ?? "",
+      specificRoles: p.specificRoles ?? "",
+      timeline: p.timeline ?? "",
       summary: p.summary ?? "",
       essay: p.essay ?? "",
       tags: JSON.stringify(p.tags ?? []),
       published: true,
       order: i,
     };
-    const project = existing
-      ? await prisma.project.update({ where: { id: existing.id }, data })
-      : await prisma.project.create({ data: { slug: p.slug, ...data } });
 
-    await prisma.projectImage.deleteMany({ where: { projectId: project.id } });
-    if (p.images && p.images.length > 0) {
+    let project = existing;
+    if (!existing) {
+      project = await prisma.project.create({
+        data: { slug: p.slug, ...data },
+        include: { images: true },
+      });
+      console.log(`  + created project ${p.slug}`);
+    } else if (forceSeed) {
+      project = await prisma.project.update({
+        where: { id: existing.id },
+        data,
+        include: { images: true },
+      });
+      console.log(`  ~ force-updated project ${p.slug}`);
+    } else {
+      console.log(`  · kept admin project ${p.slug}`);
+    }
+
+    if (!project) continue;
+
+    const shouldSeedImages = forceSeed || project.images.length === 0;
+    if (shouldSeedImages && p.images && p.images.length > 0) {
+      await prisma.projectImage.deleteMany({ where: { projectId: project.id } });
       await prisma.projectImage.createMany({
         data: p.images.map((url, idx) => ({
           url,
@@ -160,7 +192,7 @@ async function main() {
       });
     }
   }
-  console.log("  ✓ Work projects");
+  console.log(`  ✓ Work projects${forceSeed ? " (forced)" : ""}`);
 
   // ── Footer ──────────────────────────────────────────────────────────────
   const existingFooter = await prisma.footerContent.count();

@@ -123,26 +123,82 @@
 .colTitle,
 .colMeta,
 .colEssay {
-  font-size: 12px;
-  line-height: 1.35;
-  color: rgba(0, 0, 0, 0.75);
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.78);
 }
 
-.colTitle strong {
+.titleLine {
+  margin: 0;
   font-weight: 600;
 }
 
-.colMeta i {
-  font-style: italic;
-  font-family: var(--font-fira), "Fira Sans", system-ui, sans-serif;
+.subtitleLine {
+  margin: 0.35em 0 0;
+  font-weight: 300;
 }
 
-.colEssay p {
+.metaRow {
+  margin: 0 0 0.55em;
+}
+
+.metaLabel {
+  font-weight: 700;
+}
+
+.metaValue {
+  font-weight: 300;
+  white-space: pre-wrap;
+}
+
+.metaLink {
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+  word-break: break-all;
+}
+
+.metaLink:hover {
+  opacity: 0.72;
+}
+
+.summaryLine {
+  margin: 0.85em 0 0;
+  font-weight: 500;
+}
+
+.summaryLabel {
+  font-weight: 500;
+}
+
+.timelineLine {
+  margin: 0.75em 0 0;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.colEssay p,
+.essayHtml :global(p) {
   margin: 0 0 0.9em;
 }
 
-.colEssay p:last-child {
+.colEssay p:last-child,
+.essayHtml :global(p:last-child) {
   margin-bottom: 0;
+}
+
+.essayHtml :global(.essay-heading) {
+  font-weight: 700;
+}
+
+.essayHtml :global(.essay-quote) {
+  font-weight: 300;
+  font-style: italic;
+}
+
+.essayHtml :global(.essay-body) {
+  font-weight: 400;
 }
 
 .zoomOverlay {

@@ -31,11 +31,18 @@ export type WorkProjectView = {
   subtitle: string;
   year: number;
   projectType: string;
+  architect: string;
+  firm: string;
   position: string;
+  projectFunction: string;
+  awardFeature: string;
   size: string;
   location: string;
   status: string;
   client: string;
+  team: string;
+  specificRoles: string;
+  timeline: string;
   summary: string;
   essay: string;
   tags: string[];

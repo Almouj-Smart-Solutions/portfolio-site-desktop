@@ -297,15 +297,40 @@ export default function DesktopFooter({
     };
   }, []);
 
+  const setGradientFromClientX = useCallback(
+    (clientX: number, el: HTMLElement) => {
+      const rect = el.getBoundingClientRect();
+      const x = ((clientX - rect.left) / Math.max(1, rect.width)) * 100;
+      gradientHoverRef.current = true;
+      gradientTargetRef.current = Math.min(100, Math.max(0, x));
+      startGradientTick();
+    },
+    [startGradientTick]
+  );
+
   const handleFooterMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 100;
-    gradientHoverRef.current = true;
-    gradientTargetRef.current = Math.min(100, Math.max(0, x));
-    startGradientTick();
+    setGradientFromClientX(e.clientX, e.currentTarget);
   };
 
   const handleFooterMouseLeave = () => {
+    gradientHoverRef.current = false;
+    gradientTargetRef.current = 48;
+    startGradientTick();
+  };
+
+  const handleFooterTouchStart = (e: React.TouchEvent<HTMLElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    setGradientFromClientX(touch.clientX, e.currentTarget);
+  };
+
+  const handleFooterTouchMove = (e: React.TouchEvent<HTMLElement>) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    setGradientFromClientX(touch.clientX, e.currentTarget);
+  };
+
+  const handleFooterTouchEnd = () => {
     gradientHoverRef.current = false;
     gradientTargetRef.current = 48;
     startGradientTick();
@@ -548,6 +573,10 @@ export default function DesktopFooter({
         onClick={handleFooterClick}
         onMouseMove={handleFooterMouseMove}
         onMouseLeave={handleFooterMouseLeave}
+        onTouchStart={handleFooterTouchStart}
+        onTouchMove={handleFooterTouchMove}
+        onTouchEnd={handleFooterTouchEnd}
+        onTouchCancel={handleFooterTouchEnd}
       >
         <div className={styles.disciplineRow}>
           <div className={styles.disciplineLeft}>{footer.disciplineLeft}</div>

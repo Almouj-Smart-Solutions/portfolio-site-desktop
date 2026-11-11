@@ -7,8 +7,31 @@ import type { WorkProjectView } from "@/lib/portfolio-types";
 import styles from "./WorkWindow.module.css";
 
 const VISIBLE = 5;
+const URL_PATTERN = /(https?:\/\/[^\s<]+[^.,;:!?)\s])/g;
 
 type Box = { left: number; top: number; width: number; height: number };
+
+function linkifyText(text: string) {
+  const parts = text.split(URL_PATTERN);
+  return parts.map((part, index) => {
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={`link-${index}`}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.metaLink}
+          onMouseDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={`text-${index}`}>{part}</span>;
+  });
+}
 
 type ZoomState = {
   images: string[];
@@ -410,22 +433,60 @@ export default function WorkWindow({ projects }: { projects: WorkProjectView[] }
 
           <div className={styles.columns}>
             <div className={styles.colTitle}>
-              <strong>{project.title}</strong>
+              <p className={styles.titleLine}>{project.title}</p>
+              {project.subtitle ? (
+                <p className={styles.subtitleLine}>{project.subtitle}</p>
+              ) : null}
             </div>
+
             <div className={styles.colMeta}>
-              {project.subtitle}
-              <br />
-              {project.projectType}
-              <br />
-              {project.size}, {project.location}
-              <br />
-              <br />
-              <i>{project.year}</i>
+              {[
+                ["project type:", project.projectType],
+                ["architect in-charge:", project.architect],
+                ["firm:", project.firm],
+                ["position:", project.position],
+                ["project function:", project.projectFunction],
+                ["award/feature:", project.awardFeature],
+                [
+                  "size/location:",
+                  [project.size, project.location].filter(Boolean).join("/"),
+                ],
+                ["status:", project.status],
+                ["client:", project.client],
+                ["team:", project.team],
+                ["specific role(s):", project.specificRoles],
+              ]
+                .filter(([, value]) => Boolean(value))
+                .map(([label, value]) => (
+                  <p key={label} className={styles.metaRow}>
+                    <span className={styles.metaLabel}>{label}</span>{" "}
+                    <span className={styles.metaValue}>{linkifyText(String(value))}</span>
+                  </p>
+                ))}
+
+              {project.summary ? (
+                <p className={styles.summaryLine}>
+                  <span className={styles.summaryLabel}>SUMMARY:</span>{" "}
+                  {project.summary}
+                </p>
+              ) : null}
+
+              {project.timeline ? (
+                <p className={styles.timelineLine}>{project.timeline}</p>
+              ) : null}
             </div>
+
             <div className={styles.colEssay}>
-              {(project.essay || project.summary).split("\n\n").map((para) => (
-                <p key={para.slice(0, 48)}>{para}</p>
-              ))}
+              {/<[a-z][\s\S]*>/i.test(project.essay) ? (
+                <div
+                  className={styles.essayHtml}
+                  dangerouslySetInnerHTML={{ __html: project.essay }}
+                />
+              ) : (
+                (project.essay || project.summary).split("\n\n").map((para) => (
+                  <p key={para.slice(0, 48)}>{para}</p>
+                ))
+              )}
             </div>
           </div>
         </section>
