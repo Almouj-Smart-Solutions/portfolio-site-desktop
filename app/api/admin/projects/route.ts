@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidatePortfolio } from "@/lib/revalidate-portfolio";
 
 export async function GET() {
   const session = await auth();
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
     include: { images: true },
   });
 
+  revalidatePortfolio();
   return NextResponse.json(project, { status: 201 });
 }
 
@@ -77,5 +79,6 @@ export async function PUT(request: Request) {
     )
   );
 
+  revalidatePortfolio();
   return NextResponse.json({ ok: true });
 }

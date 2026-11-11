@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { unstable_cache } from "next/cache";
 import DOMPurify from "isomorphic-dompurify";
 import { prisma } from "@/lib/db";
 import type { FooterView, PortfolioContent, SiteView, WorkProjectView } from "@/lib/portfolio-types";
@@ -36,9 +36,7 @@ export function accentColor(value: string | null | undefined, fallback: string) 
   return value && /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 }
 
-export async function getPortfolioContent(): Promise<PortfolioContent> {
-  await connection();
-
+async function loadPortfolioContent(): Promise<PortfolioContent> {
   const [about, education, research, awards, experience, projects, footer, site] = await Promise.all([
     prisma.aboutContent.findUnique({ where: { id: 1 } }),
     prisma.cvEducation.findMany({ orderBy: { position: "asc" } }),
@@ -125,15 +123,31 @@ export async function getPortfolioContent(): Promise<PortfolioContent> {
   };
 }
 
-export async function getSiteAccents() {
-  try {
-    await connection();
+const getCachedPortfolioContent = unstable_cache(loadPortfolioContent, ["portfolio-content"], {
+  revalidate: 120,
+  tags: ["portfolio"],
+});
+
+export async function getPortfolioContent(): Promise<PortfolioContent> {
+  return getCachedPortfolioContent();
+}
+
+const getCachedSiteAccents = unstable_cache(
+  async () => {
     const site = await prisma.siteSettings.findUnique({ where: { id: 1 } });
     return {
       pink: accentColor(site?.accentPink, fallbackSite.accentPink),
       orange: accentColor(site?.accentOrange, fallbackSite.accentOrange),
       green: accentColor(site?.accentGreen, fallbackSite.accentGreen),
     };
+  },
+  ["site-accents"],
+  { revalidate: 300, tags: ["site-accents"] },
+);
+
+export async function getSiteAccents() {
+  try {
+    return await getCachedSiteAccents();
   } catch {
     return {
       pink: fallbackSite.accentPink,

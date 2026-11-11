@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidatePortfolio } from "@/lib/revalidate-portfolio";
 
 export async function GET() {
   const session = await auth();
@@ -38,5 +39,6 @@ export async function PUT(request: Request) {
   }
 
   const savedTheories = await prisma.aboutTheory.findMany({ orderBy: { position: "asc" } });
+  revalidatePortfolio();
   return NextResponse.json({ ...content, theories: savedTheories });
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidatePortfolio } from "@/lib/revalidate-portfolio";
 
 export async function GET() {
   const session = await auth();
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
   const item = await prisma.cvEducation.create({
     data: { dateRange: body.dateRange, degree: body.degree, institution: body.institution, position: count },
   });
+  revalidatePortfolio();
   return NextResponse.json(item, { status: 201 });
 }
 
@@ -25,6 +27,7 @@ export async function PUT(request: Request) {
   const body = await request.json();
   const { id, ...data } = body;
   const item = await prisma.cvEducation.update({ where: { id }, data });
+  revalidatePortfolio();
   return NextResponse.json(item);
 }
 
@@ -33,5 +36,6 @@ export async function DELETE(request: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await request.json();
   await prisma.cvEducation.delete({ where: { id } });
+  revalidatePortfolio();
   return NextResponse.json({ ok: true });
 }

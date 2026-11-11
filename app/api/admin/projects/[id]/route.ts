@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { revalidatePortfolio } from "@/lib/revalidate-portfolio";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -61,6 +62,7 @@ export async function PUT(
     include: { images: { orderBy: { order: "asc" } } },
   });
 
+  revalidatePortfolio();
   return NextResponse.json(project);
 }
 
@@ -73,6 +75,7 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.project.delete({ where: { id: parseInt(id) } });
+  revalidatePortfolio();
   return NextResponse.json({ ok: true });
 }
 
@@ -121,5 +124,6 @@ export async function PATCH(
     createdImages.push(image);
   }
 
+  revalidatePortfolio();
   return NextResponse.json(createdImages, { status: 201 });
 }

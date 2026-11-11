@@ -395,19 +395,29 @@ function ProjectCarousel({
             transition: dragging ? "none" : "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         >
-          {images.map((src, imageIndex) => (
-            <div key={src} className={styles.carouselSlide} data-zoom-index={imageIndex}>
-              <Image
-                src={src}
-                alt={title}
-                width={640}
-                height={420}
-                className={styles.galleryImg}
-                draggable={false}
-                unoptimized
-              />
-            </div>
-          ))}
+          {images.map((src, imageIndex) => {
+            const near =
+              imageIndex >= index - 1 && imageIndex <= index + visible;
+            return (
+              <div key={src} className={styles.carouselSlide} data-zoom-index={imageIndex}>
+                {near ? (
+                  <Image
+                    src={src}
+                    alt={title}
+                    width={640}
+                    height={420}
+                    className={styles.galleryImg}
+                    draggable={false}
+                    unoptimized
+                    loading={imageIndex <= index + 1 ? "eager" : "lazy"}
+                    decoding="async"
+                  />
+                ) : (
+                  <div className={styles.galleryImg} aria-hidden />
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
