@@ -210,13 +210,16 @@ function LayoutColumnEditor({
                   Space
                   <input
                     type="number"
-                    min={0}
+                    min={-2}
                     max={4}
                     step={0.05}
                     value={row.spacingAfter}
-                    onChange={(event) =>
-                      updateRow(row.id, { spacingAfter: Number(event.target.value) || 0 })
-                    }
+                    onChange={(event) => {
+                      const next = Number(event.target.value);
+                      updateRow(row.id, {
+                        spacingAfter: Number.isFinite(next) ? next : 0,
+                      });
+                    }}
                   />
                   <span>em</span>
                 </label>
