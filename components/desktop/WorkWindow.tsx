@@ -443,114 +443,112 @@ export default function WorkWindow({ projects }: { projects: WorkProjectView[] }
           />
 
           <div className={styles.columns}>
-            <div className={styles.colTitle}>
-              {rowsForColumn(project.layout, 1)
-                .filter((row) => row.visible)
-                .map((row) => {
-                  const value = resolveRowValue(row, project);
-                  if (!value && row.kind !== "title") return null;
-                  if (row.kind === "title") {
-                    return (
-                      <p
-                        key={row.id}
-                        className={styles.titleLine}
-                        style={{ marginBottom: `${row.spacingAfter}em` }}
-                      >
-                        {value || project.title}
-                      </p>
-                    );
-                  }
-                  if (row.kind === "subtitle") {
-                    return (
-                      <p
-                        key={row.id}
-                        className={styles.subtitleLine}
-                        style={{ marginBottom: `${row.spacingAfter}em` }}
-                      >
-                        {value}
-                      </p>
-                    );
-                  }
-                  return (
-                    <p key={row.id} className={styles.metaRow} style={{ marginBottom: `${row.spacingAfter}em` }}>
-                      {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
-                      {row.label ? " " : null}
-                      <span className={styles.metaValue}>{linkifyText(value)}</span>
-                    </p>
-                  );
-                })}
-            </div>
+            {([1, 2, 3] as const).map((column) => (
+              <div
+                key={column}
+                className={column === 1 ? styles.colTitle : column === 2 ? styles.colMeta : styles.colEssay}
+              >
+                {rowsForColumn(project.layout, column)
+                  .filter((row) => row.visible)
+                  .map((row) => {
+                    const value = resolveRowValue(row, project);
+                    const style = { marginBottom: `${row.spacingAfter}em` };
 
-            <div className={styles.colMeta}>
-              {rowsForColumn(project.layout, 2)
-                .filter((row) => row.visible)
-                .map((row) => {
-                  const value = resolveRowValue(row, project);
-                  if (!value) return null;
-                  if (row.kind === "summary") {
+                    if (row.kind === "title") {
+                      return (
+                        <p key={row.id} className={styles.titleLine} style={style}>
+                          {value || project.title}
+                        </p>
+                      );
+                    }
+                    if (row.kind === "subtitle") {
+                      if (!value) return null;
+                      return (
+                        <p key={row.id} className={styles.subtitleLine} style={style}>
+                          {value}
+                        </p>
+                      );
+                    }
+                    if (row.kind === "label") {
+                      return (
+                        <p key={row.id} className={styles.metaRow} style={style}>
+                          <span className={styles.metaLabel}>{row.label || value}</span>
+                        </p>
+                      );
+                    }
+                    if (row.kind === "text" || row.kind === "custom") {
+                      if (!value) return null;
+                      return (
+                        <p key={row.id} className={styles.metaRow} style={style}>
+                          {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
+                          {row.label ? " " : null}
+                          <span className={styles.metaValue}>{linkifyText(value)}</span>
+                        </p>
+                      );
+                    }
+                    if (row.kind === "html" || row.kind === "essay" || row.field === "essay") {
+                      if (!value) return null;
+                      return /<[a-z][\s\S]*>/i.test(value) ? (
+                        <div
+                          key={row.id}
+                          className={styles.essayHtml}
+                          style={style}
+                          dangerouslySetInnerHTML={{ __html: value }}
+                        />
+                      ) : (
+                        <div key={row.id} style={style}>
+                          {value.split("\n\n").map((para) => (
+                            <p key={para.slice(0, 48)}>{para}</p>
+                          ))}
+                        </div>
+                      );
+                    }
+                    if (row.kind === "tags") {
+                      if (!project.tags.length) return null;
+                      return (
+                        <p key={row.id} className={styles.metaRow} style={style}>
+                          {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
+                          {row.label ? " " : null}
+                          <span className={styles.metaValue}>{project.tags.join(", ")}</span>
+                        </p>
+                      );
+                    }
+                    if (row.kind === "image") {
+                      if (!value) return null;
+                      return (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img key={row.id} src={value} alt="" className={styles.inlineImage} style={style} />
+                      );
+                    }
+                    if (row.kind === "summary") {
+                      if (!value) return null;
+                      return (
+                        <p key={row.id} className={styles.summaryLine} style={style}>
+                          {row.label ? <span className={styles.summaryLabel}>{row.label}</span> : null}
+                          {row.label ? " " : null}
+                          {value}
+                        </p>
+                      );
+                    }
+                    if (row.kind === "timeline") {
+                      if (!value) return null;
+                      return (
+                        <p key={row.id} className={styles.timelineLine} style={style}>
+                          {value}
+                        </p>
+                      );
+                    }
+                    if (!value) return null;
                     return (
-                      <p
-                        key={row.id}
-                        className={styles.summaryLine}
-                        style={{ marginBottom: `${row.spacingAfter}em` }}
-                      >
-                        {row.label ? <span className={styles.summaryLabel}>{row.label}</span> : null}
+                      <p key={row.id} className={styles.metaRow} style={style}>
+                        {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
                         {row.label ? " " : null}
-                        {value}
+                        <span className={styles.metaValue}>{linkifyText(value)}</span>
                       </p>
                     );
-                  }
-                  if (row.kind === "timeline") {
-                    return (
-                      <p
-                        key={row.id}
-                        className={styles.timelineLine}
-                        style={{ marginBottom: `${row.spacingAfter}em` }}
-                      >
-                        {value}
-                      </p>
-                    );
-                  }
-                  return (
-                    <p key={row.id} className={styles.metaRow} style={{ marginBottom: `${row.spacingAfter}em` }}>
-                      {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
-                      {row.label ? " " : null}
-                      <span className={styles.metaValue}>{linkifyText(value)}</span>
-                    </p>
-                  );
-                })}
-            </div>
-
-            <div className={styles.colEssay}>
-              {rowsForColumn(project.layout, 3)
-                .filter((row) => row.visible)
-                .map((row) => {
-                  const value = resolveRowValue(row, project);
-                  if (!value) return null;
-                  if (row.kind === "essay" || row.field === "essay") {
-                    return /<[a-z][\s\S]*>/i.test(value) ? (
-                      <div
-                        key={row.id}
-                        className={styles.essayHtml}
-                        style={{ marginBottom: `${row.spacingAfter}em` }}
-                        dangerouslySetInnerHTML={{ __html: value }}
-                      />
-                    ) : (
-                      <div key={row.id} style={{ marginBottom: `${row.spacingAfter}em` }}>
-                        {value.split("\n\n").map((para) => (
-                          <p key={para.slice(0, 48)}>{para}</p>
-                        ))}
-                      </div>
-                    );
-                  }
-                  return (
-                    <p key={row.id} style={{ marginBottom: `${row.spacingAfter}em` }}>
-                      {row.label ? <strong>{row.label} </strong> : null}
-                      {linkifyText(value)}
-                    </p>
-                  );
-                })}
-            </div>
+                  })}
+              </div>
+            ))}
           </div>
         </section>
       ))}

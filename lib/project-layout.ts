@@ -6,6 +6,11 @@ export type LayoutRowKind =
   | "summary"
   | "timeline"
   | "essay"
+  | "text"
+  | "html"
+  | "label"
+  | "tags"
+  | "image"
   | "custom";
 
 export type ProjectLayoutRow = {
@@ -17,7 +22,7 @@ export type ProjectLayoutRow = {
   visible: boolean;
   /** Space after this row, in em */
   spacingAfter: number;
-  /** Only used by custom rows */
+  /** Used by custom / text / html / label / image rows */
   value?: string;
 };
 
@@ -45,6 +50,19 @@ export type ProjectFieldSource = {
   timeline?: string;
   summary?: string;
   essay?: string;
+  tags?: string[];
+  images?: string[];
+};
+
+export type RowTypeOption = {
+  id: string;
+  kind: LayoutRowKind;
+  label: string;
+  description: string;
+  field?: string;
+  defaultLabel: string;
+  defaultValue?: string;
+  uniqueField?: boolean;
 };
 
 const META_DEFAULTS: Array<{ id: string; label: string; field: string; spacingAfter?: number }> = [
@@ -61,8 +79,60 @@ const META_DEFAULTS: Array<{ id: string; label: string; field: string; spacingAf
   { id: "specificRoles", label: "specific role(s):", field: "specificRoles" },
 ];
 
+/** Options shown in the Add row picker. */
+export const ROW_TYPE_OPTIONS: RowTypeOption[] = [
+  { id: "title", kind: "title", label: "Title", description: "Project title", field: "title", defaultLabel: "title", uniqueField: true },
+  { id: "subtitle", kind: "subtitle", label: "Subtitle", description: "Secondary title line", field: "subtitle", defaultLabel: "subtitle", uniqueField: true },
+  { id: "label", kind: "label", label: "Label", description: "Bold label only", defaultLabel: "label:", defaultValue: "" },
+  { id: "text", kind: "text", label: "Text", description: "Plain text block", defaultLabel: "", defaultValue: "New text" },
+  { id: "html", kind: "html", label: "HTML", description: "HTML / rich text block", defaultLabel: "", defaultValue: "<p>New HTML</p>" },
+  { id: "tags", kind: "tags", label: "Tags", description: "Project tags list", defaultLabel: "tags:", uniqueField: true },
+  { id: "image", kind: "image", label: "Image", description: "Single image by URL", defaultLabel: "", defaultValue: "" },
+  { id: "summary", kind: "summary", label: "Summary", description: "SUMMARY block", field: "summary", defaultLabel: "SUMMARY:", uniqueField: true },
+  { id: "timeline", kind: "timeline", label: "Timeline", description: "Year / timeline line", field: "timeline", defaultLabel: "timeline", uniqueField: true },
+  { id: "essay", kind: "essay", label: "Essay / HTML essay", description: "Main essay column content", field: "essay", defaultLabel: "essay", uniqueField: true },
+  { id: "projectType", kind: "meta", label: "Project type", description: "Meta field", field: "projectType", defaultLabel: "project type:", uniqueField: true },
+  { id: "architect", kind: "meta", label: "Architect", description: "Meta field", field: "architect", defaultLabel: "architect in-charge:", uniqueField: true },
+  { id: "firm", kind: "meta", label: "Firm", description: "Meta field", field: "firm", defaultLabel: "firm:", uniqueField: true },
+  { id: "role", kind: "meta", label: "Position", description: "Meta field", field: "role", defaultLabel: "position:", uniqueField: true },
+  { id: "projectFunction", kind: "meta", label: "Project function", description: "Meta field", field: "projectFunction", defaultLabel: "project function:", uniqueField: true },
+  { id: "awardFeature", kind: "meta", label: "Award / feature", description: "Meta field", field: "awardFeature", defaultLabel: "award/feature:", uniqueField: true },
+  { id: "sizeLocation", kind: "sizeLocation", label: "Size / location", description: "Combined size and location", field: "sizeLocation", defaultLabel: "size/location:", uniqueField: true },
+  { id: "status", kind: "meta", label: "Status", description: "Meta field", field: "status", defaultLabel: "status:", uniqueField: true },
+  { id: "client", kind: "meta", label: "Client", description: "Meta field", field: "client", defaultLabel: "client:", uniqueField: true },
+  { id: "team", kind: "meta", label: "Team", description: "Meta field", field: "team", defaultLabel: "team:", uniqueField: true },
+  { id: "specificRoles", kind: "meta", label: "Specific role(s)", description: "Meta field", field: "specificRoles", defaultLabel: "specific role(s):", uniqueField: true },
+  { id: "custom", kind: "custom", label: "Custom", description: "Label + free text", defaultLabel: "label:", defaultValue: "new text" },
+];
+
 export function createRowId(prefix = "row") {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export function createRowFromOption(option: RowTypeOption, column: 1 | 2 | 3): ProjectLayoutRow {
+  return {
+    id: createRowId(option.id),
+    kind: option.kind,
+    column,
+    label: option.defaultLabel,
+    field: option.field,
+    visible: true,
+    spacingAfter: option.kind === "title" ? 0.35 : 0.55,
+    value: option.defaultValue,
+  };
+}
+
+export function availableRowOptions(layout: ProjectLayout): RowTypeOption[] {
+  const usedFields = new Set(
+    layout.rows.map((row) => row.field).filter((field): field is string => Boolean(field)),
+  );
+  const usedKinds = new Set(layout.rows.map((row) => row.kind));
+
+  return ROW_TYPE_OPTIONS.filter((option) => {
+    if (option.uniqueField && option.field && usedFields.has(option.field)) return false;
+    if (option.uniqueField && !option.field && usedKinds.has(option.kind) && option.kind === "tags") return false;
+    return true;
+  });
 }
 
 export function defaultProjectLayout(source?: ProjectFieldSource): ProjectLayout {
@@ -160,7 +230,12 @@ export function rowsForColumn(layout: ProjectLayout, column: 1 | 2 | 3) {
 }
 
 export function resolveRowValue(row: ProjectLayoutRow, source: ProjectFieldSource): string {
-  if (row.kind === "custom") return row.value ?? "";
+  if (row.kind === "custom" || row.kind === "text" || row.kind === "html" || row.kind === "label" || row.kind === "image") {
+    return row.value ?? "";
+  }
+  if (row.kind === "tags") {
+    return (source.tags ?? []).join(", ");
+  }
   if (row.kind === "sizeLocation" || row.field === "sizeLocation") {
     return [source.size, source.location].filter(Boolean).join("/");
   }
@@ -174,6 +249,6 @@ export function resolveRowValue(row: ProjectLayoutRow, source: ProjectFieldSourc
 }
 
 export function isMultilineField(field?: string, kind?: LayoutRowKind) {
-  if (kind === "essay" || kind === "summary" || kind === "custom") return true;
+  if (kind === "essay" || kind === "summary" || kind === "custom" || kind === "text" || kind === "html") return true;
   return ["awardFeature", "client", "team", "specificRoles", "summary", "essay"].includes(field ?? "");
 }

@@ -178,6 +178,13 @@
   font-style: italic;
 }
 
+.inlineImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
 .colEssay p,
 .essayHtml :global(p) {
   margin: 0 0 0.9em;
