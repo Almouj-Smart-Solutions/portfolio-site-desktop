@@ -6,6 +6,12 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/*": ["./node_modules/.prisma/client/**/*", "./node_modules/@prisma/client/**/*"],
   },
+  experimental: {
+    // Allow larger multipart uploads from the admin panel.
+    serverActions: {
+      bodySizeLimit: "16mb",
+    },
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",

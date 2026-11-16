@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       summary: body.summary || "",
       essay: body.essay || "",
       tags: body.tags ? JSON.stringify(body.tags) : "[]",
+      layoutJson: typeof body.layoutJson === "string" ? body.layoutJson : "",
       published: body.published ?? true,
       order: count,
     },

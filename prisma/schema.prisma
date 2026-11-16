@@ -87,6 +87,7 @@ model Project {
   summary          String   @default("")
   essay            String   @default("")
   tags             String   @default("[]")
+  layoutJson       String   @default("")
   published        Boolean  @default(true)
   order            Int      @default(0)
   createdAt        DateTime @default(now())

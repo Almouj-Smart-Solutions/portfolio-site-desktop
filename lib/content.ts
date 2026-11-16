@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import DOMPurify from "isomorphic-dompurify";
 import { prisma } from "@/lib/db";
+import { parseProjectLayout } from "@/lib/project-layout";
 import type { FooterView, PortfolioContent, SiteView, WorkProjectView } from "@/lib/portfolio-types";
 
 const fallbackSite: SiteView = {
@@ -82,6 +83,9 @@ async function loadPortfolioContent(): Promise<PortfolioContent> {
       ADD_ATTR: ["style", "class", "target", "rel"],
     }),
     tags: parseTags(project.tags),
+    layout: parseProjectLayout(project.layoutJson, {
+      teamLabel: project.teamLabel,
+    }),
     images: project.images.map((image) => image.url),
   }));
 

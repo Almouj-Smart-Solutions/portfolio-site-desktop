@@ -25,6 +25,8 @@ export type ExperienceEntry = {
   location: string;
 };
 
+import type { ProjectLayout } from "@/lib/project-layout";
+
 export type WorkProjectView = {
   slug: string;
   title: string;
@@ -47,6 +49,7 @@ export type WorkProjectView = {
   summary: string;
   essay: string;
   tags: string[];
+  layout: ProjectLayout;
   images: string[];
 };
 

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import type { WorkProjectView } from "@/lib/portfolio-types";
+import { resolveRowValue, rowsForColumn } from "@/lib/project-layout";
 import styles from "./WorkWindow.module.css";
 
 const VISIBLE = 5;
@@ -443,60 +444,112 @@ export default function WorkWindow({ projects }: { projects: WorkProjectView[] }
 
           <div className={styles.columns}>
             <div className={styles.colTitle}>
-              <p className={styles.titleLine}>{project.title}</p>
-              {project.subtitle ? (
-                <p className={styles.subtitleLine}>{project.subtitle}</p>
-              ) : null}
+              {rowsForColumn(project.layout, 1)
+                .filter((row) => row.visible)
+                .map((row) => {
+                  const value = resolveRowValue(row, project);
+                  if (!value && row.kind !== "title") return null;
+                  if (row.kind === "title") {
+                    return (
+                      <p
+                        key={row.id}
+                        className={styles.titleLine}
+                        style={{ marginBottom: `${row.spacingAfter}em` }}
+                      >
+                        {value || project.title}
+                      </p>
+                    );
+                  }
+                  if (row.kind === "subtitle") {
+                    return (
+                      <p
+                        key={row.id}
+                        className={styles.subtitleLine}
+                        style={{ marginBottom: `${row.spacingAfter}em` }}
+                      >
+                        {value}
+                      </p>
+                    );
+                  }
+                  return (
+                    <p key={row.id} className={styles.metaRow} style={{ marginBottom: `${row.spacingAfter}em` }}>
+                      {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
+                      {row.label ? " " : null}
+                      <span className={styles.metaValue}>{linkifyText(value)}</span>
+                    </p>
+                  );
+                })}
             </div>
 
             <div className={styles.colMeta}>
-              {[
-                ["project type:", project.projectType],
-                ["architect in-charge:", project.architect],
-                ["firm:", project.firm],
-                ["position:", project.position],
-                ["project function:", project.projectFunction],
-                ["award/feature:", project.awardFeature],
-                [
-                  "size/location:",
-                  [project.size, project.location].filter(Boolean).join("/"),
-                ],
-                ["status:", project.status],
-                ["client:", project.client],
-                [project.teamLabel || "team:", project.team],
-                ["specific role(s):", project.specificRoles],
-              ]
-                .filter(([, value]) => Boolean(value))
-                .map(([label, value]) => (
-                  <p key={label} className={styles.metaRow}>
-                    <span className={styles.metaLabel}>{label}</span>{" "}
-                    <span className={styles.metaValue}>{linkifyText(String(value))}</span>
-                  </p>
-                ))}
-
-              {project.summary ? (
-                <p className={styles.summaryLine}>
-                  <span className={styles.summaryLabel}>SUMMARY:</span>{" "}
-                  {project.summary}
-                </p>
-              ) : null}
-
-              {project.timeline ? (
-                <p className={styles.timelineLine}>{project.timeline}</p>
-              ) : null}
+              {rowsForColumn(project.layout, 2)
+                .filter((row) => row.visible)
+                .map((row) => {
+                  const value = resolveRowValue(row, project);
+                  if (!value) return null;
+                  if (row.kind === "summary") {
+                    return (
+                      <p
+                        key={row.id}
+                        className={styles.summaryLine}
+                        style={{ marginBottom: `${row.spacingAfter}em` }}
+                      >
+                        {row.label ? <span className={styles.summaryLabel}>{row.label}</span> : null}
+                        {row.label ? " " : null}
+                        {value}
+                      </p>
+                    );
+                  }
+                  if (row.kind === "timeline") {
+                    return (
+                      <p
+                        key={row.id}
+                        className={styles.timelineLine}
+                        style={{ marginBottom: `${row.spacingAfter}em` }}
+                      >
+                        {value}
+                      </p>
+                    );
+                  }
+                  return (
+                    <p key={row.id} className={styles.metaRow} style={{ marginBottom: `${row.spacingAfter}em` }}>
+                      {row.label ? <span className={styles.metaLabel}>{row.label}</span> : null}
+                      {row.label ? " " : null}
+                      <span className={styles.metaValue}>{linkifyText(value)}</span>
+                    </p>
+                  );
+                })}
             </div>
 
             <div className={styles.colEssay}>
-              {/<[a-z][\s\S]*>/i.test(project.essay) ? (
-                <div
-                  className={styles.essayHtml}
-                  dangerouslySetInnerHTML={{ __html: project.essay }}
-                />
-              ) : (
-                (project.essay || project.summary).split("\n\n").map((para) => (
-                  <p key={para.slice(0, 48)}>{para}</p>
-                ))
-              )}
+              {rowsForColumn(project.layout, 3)
+                .filter((row) => row.visible)
+                .map((row) => {
+                  const value = resolveRowValue(row, project);
+                  if (!value) return null;
+                  if (row.kind === "essay" || row.field === "essay") {
+                    return /<[a-z][\s\S]*>/i.test(value) ? (
+                      <div
+                        key={row.id}
+                        className={styles.essayHtml}
+                        style={{ marginBottom: `${row.spacingAfter}em` }}
+                        dangerouslySetInnerHTML={{ __html: value }}
+                      />
+                    ) : (
+                      <div key={row.id} style={{ marginBottom: `${row.spacingAfter}em` }}>
+                        {value.split("\n\n").map((para) => (
+                          <p key={para.slice(0, 48)}>{para}</p>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <p key={row.id} style={{ marginBottom: `${row.spacingAfter}em` }}>
+                      {row.label ? <strong>{row.label} </strong> : null}
+                      {linkifyText(value)}
+                    </p>
+                  );
+                })}
             </div>
           </div>
         </section>

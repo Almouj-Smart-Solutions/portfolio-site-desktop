@@ -5,7 +5,9 @@ mkdir -p /data /app/public/assets/work
 if [ -d /app/asset-seed ]; then
   cp -an /app/asset-seed/. /app/public/assets/work/ || true
 fi
-chown -R nextjs:nodejs /data /app/public/assets/work
+# Volume mounts often start as root — make sure the app user can write uploads.
+chown -R nextjs:nodejs /data /app/public/assets/work || true
+chmod -R u+rwX,g+rwX /data /app/public/assets/work || true
 
 su-exec nextjs node /app/node_modules/prisma/build/index.js migrate deploy
 

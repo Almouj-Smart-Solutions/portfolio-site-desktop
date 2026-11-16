@@ -3,6 +3,17 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { adminJson } from "@/lib/admin-fetch";
+import {
+  createRowId,
+  defaultProjectLayout,
+  isMultilineField,
+  parseProjectLayout,
+  resolveRowValue,
+  rowsForColumn,
+  stringifyProjectLayout,
+  type ProjectLayout,
+  type ProjectLayoutRow,
+} from "@/lib/project-layout";
 
 type ProjectImage = { id: number; url: string; order: number };
 
@@ -29,15 +40,9 @@ type Project = {
   summary: string;
   essay: string;
   tags: string;
+  layoutJson: string;
   published: boolean;
   images: ProjectImage[];
-};
-
-type FieldDef = {
-  key: keyof Project;
-  label: string;
-  multiline?: boolean;
-  rows?: number;
 };
 
 const URL_PATTERN = /(https?:\/\/[^\s<]+[^.,;:!?)\s])/g;
@@ -95,16 +100,203 @@ function Field({
   );
 }
 
-function MetaPreviewRow({ label, value }: { label: string; value: string }) {
-  if (!value) return null;
+function applyFieldValue(project: Project, field: string | undefined, value: string): Project {
+  if (!field || field === "sizeLocation") return project;
+  if (field === "position") return { ...project, role: value };
+  if (field in project) {
+    return { ...project, [field]: value } as Project;
+  }
+  return project;
+}
+
+function LayoutColumnEditor({
+  column,
+  title,
+  hint,
+  layout,
+  project,
+  onLayoutChange,
+  onProjectChange,
+}: {
+  column: 1 | 2 | 3;
+  title: string;
+  hint: string;
+  layout: ProjectLayout;
+  project: Project;
+  onLayoutChange: (layout: ProjectLayout) => void;
+  onProjectChange: (project: Project) => void;
+}) {
+  const [dragId, setDragId] = useState<string | null>(null);
+  const rows = rowsForColumn(layout, column);
+
+  function updateRow(id: string, patch: Partial<ProjectLayoutRow>) {
+    onLayoutChange({
+      rows: layout.rows.map((row) => (row.id === id ? { ...row, ...patch } : row)),
+    });
+  }
+
+  function moveRow(fromId: string, toId: string) {
+    if (fromId === toId) return;
+    const columnRows = rowsForColumn(layout, column);
+    const from = columnRows.findIndex((row) => row.id === fromId);
+    const to = columnRows.findIndex((row) => row.id === toId);
+    if (from < 0 || to < 0) return;
+    const nextColumn = [...columnRows];
+    const [item] = nextColumn.splice(from, 1);
+    nextColumn.splice(to, 0, item);
+    const others = layout.rows.filter((row) => row.column !== column);
+    onLayoutChange({ rows: [...others, ...nextColumn] });
+  }
+
+  function addCustomRow() {
+    const row: ProjectLayoutRow = {
+      id: createRowId(`c${column}`),
+      kind: "custom",
+      column,
+      label: "label:",
+      visible: true,
+      spacingAfter: 0.55,
+      value: "",
+    };
+    onLayoutChange({ rows: [...layout.rows, row] });
+  }
+
+  function removeRow(id: string) {
+    onLayoutChange({ rows: layout.rows.filter((row) => row.id !== id) });
+  }
+
   return (
-    <p className="project-preview-meta-row">
-      <span className="project-preview-meta-label">{label}</span>{" "}
-      <span
-        className="project-preview-meta-value"
-        dangerouslySetInnerHTML={{ __html: linkifyPreview(value) }}
-      />
-    </p>
+    <div className="project-editor-col admin-card">
+      <header className="project-editor-col-head">
+        <span>Column {column}</span>
+        <small>{hint}</small>
+      </header>
+      <p className="admin-muted" style={{ margin: 0 }}>
+        {title}. Drag rows to reorder. Toggle eye to hide/show.
+      </p>
+
+      <div className="layout-row-list">
+        {rows.map((row) => {
+          const value = resolveRowValue(row, {
+            ...project,
+            position: project.role,
+          });
+          const multiline = isMultilineField(row.field, row.kind);
+          return (
+            <article
+              key={row.id}
+              className={`layout-row ${row.visible ? "" : "is-hidden"}`}
+              draggable
+              onDragStart={() => setDragId(row.id)}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={() => {
+                if (dragId) moveRow(dragId, row.id);
+                setDragId(null);
+              }}
+            >
+              <div className="layout-row-toolbar">
+                <span className="layout-row-handle" title="Drag to reorder">
+                  ⋮⋮
+                </span>
+                <button
+                  type="button"
+                  className={`admin-btn ${row.visible ? "active" : ""}`}
+                  onClick={() => updateRow(row.id, { visible: !row.visible })}
+                  title={row.visible ? "Hide on site" : "Show on site"}
+                >
+                  {row.visible ? "Shown" : "Hidden"}
+                </button>
+                <label className="layout-spacing">
+                  Space
+                  <input
+                    type="number"
+                    min={0}
+                    max={4}
+                    step={0.05}
+                    value={row.spacingAfter}
+                    onChange={(event) =>
+                      updateRow(row.id, { spacingAfter: Number(event.target.value) || 0 })
+                    }
+                  />
+                  <span>em</span>
+                </label>
+                {row.kind === "custom" ? (
+                  <button type="button" className="admin-btn danger" onClick={() => removeRow(row.id)}>
+                    Delete
+                  </button>
+                ) : null}
+              </div>
+
+              {row.kind !== "title" && row.kind !== "subtitle" && row.kind !== "timeline" && row.kind !== "essay" ? (
+                <Field
+                  label="Label"
+                  value={row.label}
+                  onChange={(next) => {
+                    updateRow(row.id, { label: next });
+                    if (row.field === "team") {
+                      onProjectChange({ ...project, teamLabel: next || "team:" });
+                    }
+                  }}
+                />
+              ) : (
+                <Field
+                  label="Label (admin only)"
+                  value={row.label}
+                  onChange={(next) => updateRow(row.id, { label: next })}
+                />
+              )}
+
+              {row.kind === "sizeLocation" ? (
+                <div className="admin-grid">
+                  <Field
+                    label="Size"
+                    value={project.size}
+                    onChange={(next) => onProjectChange({ ...project, size: next })}
+                  />
+                  <Field
+                    label="Location"
+                    value={project.location}
+                    onChange={(next) => onProjectChange({ ...project, location: next })}
+                  />
+                </div>
+              ) : row.kind === "custom" ? (
+                <Field
+                  label="Value"
+                  value={row.value ?? ""}
+                  multiline
+                  rows={3}
+                  onChange={(next) => updateRow(row.id, { value: next })}
+                />
+              ) : (
+                <Field
+                  label="Value"
+                  value={
+                    row.field === "role" || row.field === "position"
+                      ? project.role
+                      : row.field && row.field in project
+                        ? String(project[row.field as keyof Project] ?? "")
+                        : value
+                  }
+                  multiline={multiline}
+                  rows={row.kind === "essay" ? 12 : multiline ? 5 : 3}
+                  onChange={(next) => {
+                    if (row.field === "role" || row.field === "position") {
+                      onProjectChange({ ...project, role: next });
+                      return;
+                    }
+                    onProjectChange(applyFieldValue(project, row.field, next));
+                  }}
+                />
+              )}
+            </article>
+          );
+        })}
+      </div>
+
+      <button type="button" className="admin-btn" onClick={addCustomRow}>
+        Add custom row
+      </button>
+    </div>
   );
 }
 
@@ -113,8 +305,11 @@ export default function ProjectEditorPage() {
   const router = useRouter();
   const essayRef = useRef<HTMLTextAreaElement>(null);
   const [project, setProject] = useState<Project | null>(null);
+  const [layout, setLayout] = useState<ProjectLayout>(defaultProjectLayout());
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
+  const [editingTagIndex, setEditingTagIndex] = useState<number | null>(null);
+  const [editingTagValue, setEditingTagValue] = useState("");
   const [images, setImages] = useState<ProjectImage[]>([]);
   const [dragId, setDragId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -127,6 +322,11 @@ export default function ProjectEditorPage() {
         setProject(data);
         setTags(parseTags(data.tags));
         setImages(data.images);
+        setLayout(
+          parseProjectLayout(data.layoutJson, {
+            teamLabel: data.teamLabel,
+          }),
+        );
       })
       .catch((reason: Error) => setError(reason.message));
   }, [params.id]);
@@ -136,8 +336,17 @@ export default function ProjectEditorPage() {
   }
 
   function wrapEssaySelection(kind: "heading" | "body" | "quote") {
+    if (!project) return;
     const el = essayRef.current;
-    if (!el || !project) return;
+    const essayRow = layout.rows.find((row) => row.kind === "essay");
+    const source = essayRow ? project.essay : project.essay;
+    if (!el) {
+      const selected = source.trim() || "…";
+      const className =
+        kind === "heading" ? "essay-heading" : kind === "quote" ? "essay-quote" : "essay-body";
+      update("essay", `${source}\n<p class="${className}">${selected}</p>`);
+      return;
+    }
     const start = el.selectionStart;
     const end = el.selectionEnd;
     const selected = project.essay.slice(start, end).trim() || "…";
@@ -160,6 +369,7 @@ export default function ProjectEditorPage() {
     setError("");
     setStatus("");
     try {
+      const teamRow = layout.rows.find((row) => row.field === "team");
       const saved = await adminJson<Project>(`/api/admin/projects/${project.id}`, "PUT", {
         title: project.title,
         subtitle: project.subtitle,
@@ -175,16 +385,22 @@ export default function ProjectEditorPage() {
         location: project.location,
         status: project.status,
         client: project.client,
-        teamLabel: project.teamLabel,
+        teamLabel: teamRow?.label || project.teamLabel || "team:",
         team: project.team,
         specificRoles: project.specificRoles,
         timeline: project.timeline,
         summary: project.summary,
         essay: project.essay,
         tags,
+        layoutJson: stringifyProjectLayout(layout),
         published: project.published,
       });
       setProject(saved);
+      setLayout(
+        parseProjectLayout(saved.layoutJson, {
+          teamLabel: saved.teamLabel,
+        }),
+      );
       setStatus("Saved.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Save failed.");
@@ -195,17 +411,44 @@ export default function ProjectEditorPage() {
 
   async function upload(files: FileList | File[]) {
     if (!project || files.length === 0) return;
-    const form = new FormData();
-    Array.from(files).forEach((file) => form.append("images", file));
-    setError("");
-    const response = await fetch(`/api/admin/projects/${project.id}`, { method: "PATCH", body: form });
-    if (!response.ok) {
-      setError(await response.text());
+    const list = Array.from(files).filter((file) => file.size > 0);
+    if (list.length === 0) {
+      setError("No image files selected.");
       return;
     }
-    const created = (await response.json()) as ProjectImage[];
-    setImages((current) => [...current, ...created]);
-    setStatus("Images uploaded.");
+    const form = new FormData();
+    list.forEach((file) => form.append("images", file));
+    setError("");
+    setStatus(`Uploading ${list.length} image${list.length === 1 ? "" : "s"}…`);
+    try {
+      const response = await fetch(`/api/admin/projects/${project.id}`, {
+        method: "PATCH",
+        body: form,
+        credentials: "include",
+      });
+      const raw = await response.text();
+      let payload: { error?: string } | ProjectImage[] | null = null;
+      try {
+        payload = raw ? (JSON.parse(raw) as { error?: string } | ProjectImage[]) : null;
+      } catch {
+        payload = null;
+      }
+      if (!response.ok) {
+        const message =
+          payload && !Array.isArray(payload) && payload.error
+            ? payload.error
+            : raw || `Upload failed (${response.status})`;
+        setStatus("");
+        setError(message);
+        return;
+      }
+      const created = (Array.isArray(payload) ? payload : []) as ProjectImage[];
+      setImages((current) => [...current, ...created]);
+      setStatus(`Uploaded ${created.length} image${created.length === 1 ? "" : "s"}.`);
+    } catch (reason) {
+      setStatus("");
+      setError(reason instanceof Error ? reason.message : "Upload failed.");
+    }
   }
 
   async function removeImage(imageId: number) {
@@ -238,6 +481,30 @@ export default function ProjectEditorPage() {
     }
   }
 
+  function addTag() {
+    const next = tagDraft.trim();
+    if (!next || tags.includes(next)) return;
+    setTags([...tags, next]);
+    setTagDraft("");
+  }
+
+  function startEditTag(index: number) {
+    setEditingTagIndex(index);
+    setEditingTagValue(tags[index] ?? "");
+  }
+
+  function commitEditTag() {
+    if (editingTagIndex === null) return;
+    const next = editingTagValue.trim();
+    if (!next) {
+      setTags(tags.filter((_, index) => index !== editingTagIndex));
+    } else {
+      setTags(tags.map((tag, index) => (index === editingTagIndex ? next : tag)));
+    }
+    setEditingTagIndex(null);
+    setEditingTagValue("");
+  }
+
   const essayPreview = useMemo(() => {
     if (!project?.essay) return "";
     if (/<[a-z][\s\S]*>/i.test(project.essay)) return project.essay;
@@ -253,36 +520,33 @@ export default function ProjectEditorPage() {
     return error ? <p className="admin-error">{error}</p> : <p className="admin-muted">Loading project…</p>;
   }
 
-  const col2Fields: FieldDef[] = [
-    { key: "projectType", label: "project type:" },
-    { key: "architect", label: "architect in-charge:" },
-    { key: "firm", label: "firm:" },
-    { key: "role", label: "position:" },
-    { key: "projectFunction", label: "project function:" },
-    { key: "awardFeature", label: "award/feature:", multiline: true, rows: 8 },
-    { key: "size", label: "size:" },
-    { key: "location", label: "location:" },
-    { key: "status", label: "status:" },
-    { key: "client", label: "client:", multiline: true, rows: 3 },
-    { key: "teamLabel", label: "team label:" },
-    { key: "team", label: "team value:", multiline: true, rows: 5 },
-    { key: "specificRoles", label: "specific role(s):", multiline: true, rows: 6 },
-    { key: "summary", label: "SUMMARY:", multiline: true, rows: 4 },
-    { key: "timeline", label: "timeline / year line:" },
-  ];
-
-  const sizeLocation = [project.size, project.location].filter(Boolean).join("/");
+  const source = { ...project, position: project.role };
 
   return (
     <form className="admin-stack project-editor" onSubmit={onSave}>
       <div className="admin-row" style={{ justifyContent: "space-between" }}>
         <div>
           <h1 className="admin-title">{project.title || "Project"}</h1>
-          <p className="admin-lead">Edit in the same three-column format as the Work window.</p>
+          <p className="admin-lead">
+            Hide/show rows, edit labels, set spacing, drag to sort. Current project content is preserved.
+          </p>
         </div>
         <div className="admin-row">
           <button className="admin-btn" type="button" onClick={() => router.push("/admin/projects")}>
             Back
+          </button>
+          <button
+            className="admin-btn"
+            type="button"
+            onClick={() =>
+              setLayout(
+                defaultProjectLayout({
+                  teamLabel: project.teamLabel,
+                }),
+              )
+            }
+          >
+            Reset layout
           </button>
           <button className="admin-btn primary" type="submit" disabled={saving}>
             {saving ? "Saving…" : "Save project"}
@@ -310,15 +574,46 @@ export default function ProjectEditorPage() {
 
         <div className="admin-stack" style={{ marginTop: 12 }}>
           <strong>Tags</strong>
+          <p className="admin-muted" style={{ margin: 0 }}>
+            Add, edit (click a tag), or delete tags.
+          </p>
           <div className="admin-chips">
-            {tags.map((tag) => (
-              <span className="admin-chip" key={tag}>
-                {tag}
-                <button className="admin-btn" type="button" onClick={() => setTags(tags.filter((item) => item !== tag))}>
-                  ×
-                </button>
-              </span>
-            ))}
+            {tags.map((tag, index) =>
+              editingTagIndex === index ? (
+                <span className="admin-chip" key={`edit-${index}`}>
+                  <input
+                    value={editingTagValue}
+                    autoFocus
+                    onChange={(event) => setEditingTagValue(event.target.value)}
+                    onBlur={commitEditTag}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        commitEditTag();
+                      }
+                      if (event.key === "Escape") {
+                        setEditingTagIndex(null);
+                        setEditingTagValue("");
+                      }
+                    }}
+                    style={{ width: 140 }}
+                  />
+                </span>
+              ) : (
+                <span className="admin-chip" key={`${tag}-${index}`}>
+                  <button type="button" className="admin-chip-edit" onClick={() => startEditTag(index)}>
+                    {tag}
+                  </button>
+                  <button
+                    className="admin-btn"
+                    type="button"
+                    onClick={() => setTags(tags.filter((_, itemIndex) => itemIndex !== index))}
+                  >
+                    ×
+                  </button>
+                </span>
+              ),
+            )}
           </div>
           <div className="admin-row">
             <input
@@ -328,22 +623,10 @@ export default function ProjectEditorPage() {
               onKeyDown={(event) => {
                 if (event.key !== "Enter") return;
                 event.preventDefault();
-                const next = tagDraft.trim();
-                if (!next || tags.includes(next)) return;
-                setTags([...tags, next]);
-                setTagDraft("");
+                addTag();
               }}
             />
-            <button
-              className="admin-btn"
-              type="button"
-              onClick={() => {
-                const next = tagDraft.trim();
-                if (!next || tags.includes(next)) return;
-                setTags([...tags, next]);
-                setTagDraft("");
-              }}
-            >
+            <button className="admin-btn" type="button" onClick={addTag}>
               Add tag
             </button>
           </div>
@@ -351,78 +634,63 @@ export default function ProjectEditorPage() {
       </section>
 
       <section className="project-editor-columns">
-        <div className="project-editor-col admin-card">
-          <header className="project-editor-col-head">
-            <span>Column 1</span>
-            <small>title · subtitle</small>
-          </header>
-          <Field
-            label="title"
-            hint="SemiBold"
-            value={project.title}
-            onChange={(value) => update("title", value)}
+        <LayoutColumnEditor
+          column={1}
+          title="Title column"
+          hint="title · subtitle"
+          layout={layout}
+          project={project}
+          onLayoutChange={setLayout}
+          onProjectChange={setProject}
+        />
+        <LayoutColumnEditor
+          column={2}
+          title="Meta column"
+          hint="labels · values · summary"
+          layout={layout}
+          project={project}
+          onLayoutChange={setLayout}
+          onProjectChange={setProject}
+        />
+        <div className="admin-stack">
+          <LayoutColumnEditor
+            column={3}
+            title="Essay column"
+            hint="brief · research"
+            layout={layout}
+            project={project}
+            onLayoutChange={setLayout}
+            onProjectChange={setProject}
           />
-          <Field
-            label="subtitle"
-            hint="Light"
-            value={project.subtitle}
-            onChange={(value) => update("subtitle", value)}
-          />
-        </div>
-
-        <div className="project-editor-col admin-card">
-          <header className="project-editor-col-head">
-            <span>Column 2</span>
-            <small>meta · summary · timeline</small>
-          </header>
-          {col2Fields.map((field) => (
-            <Field
-              key={field.key}
-              label={field.label}
-              hint={field.multiline ? undefined : "Bold label / Light value"}
-              value={String(project[field.key] ?? "")}
-              onChange={(value) => update(field.key, value)}
-              multiline={field.multiline}
-              rows={field.rows}
-            />
-          ))}
-        </div>
-
-        <div className="project-editor-col admin-card">
-          <header className="project-editor-col-head">
-            <span>Column 3</span>
-            <small>brief · research essay</small>
-          </header>
-          <div className="admin-row">
-            <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("heading")}>
-              Wrap as heading
-            </button>
-            <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("body")}>
-              Wrap as body
-            </button>
-            <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("quote")}>
-              Wrap as quote
-            </button>
+          <div className="admin-card admin-stack">
+            <div className="admin-row">
+              <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("heading")}>
+                Wrap selection as heading
+              </button>
+              <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("body")}>
+                as body
+              </button>
+              <button className="admin-btn" type="button" onClick={() => wrapEssaySelection("quote")}>
+                as quote
+              </button>
+            </div>
+            <label className="admin-field">
+              Essay HTML helper (mirrors column 3 essay value)
+              <textarea
+                ref={essayRef}
+                value={project.essay}
+                onChange={(event) => update("essay", event.target.value)}
+                style={{ minHeight: 180 }}
+              />
+            </label>
           </div>
-          <p className="admin-muted" style={{ marginBottom: 0 }}>
-            Select text, then wrap. Headings = Bold, body = Regular, quote = Light Italic.
-          </p>
-          <label className="admin-field">
-            essay
-            <textarea
-              ref={essayRef}
-              value={project.essay}
-              onChange={(event) => update("essay", event.target.value)}
-              style={{ minHeight: 420 }}
-            />
-          </label>
         </div>
       </section>
 
       <section className="project-preview admin-card">
         <header className="project-editor-col-head">
           <span>Live preview</span>
-          <small>Work window layout</small>
+          <small>respects hide/show, labels, spacing, order</small>
         </header>
 
         {images[0] ? (
@@ -435,36 +703,104 @@ export default function ProjectEditorPage() {
 
         <div className="project-preview-columns">
           <div className="project-preview-col">
-            <p className="project-preview-title">{project.title || "Title"}</p>
-            {project.subtitle ? <p className="project-preview-subtitle">{project.subtitle}</p> : null}
+            {rowsForColumn(layout, 1)
+              .filter((row) => row.visible)
+              .map((row) => {
+                const value = resolveRowValue(row, source);
+                if (!value && row.kind !== "title") return null;
+                if (row.kind === "title") {
+                  return (
+                    <p key={row.id} className="project-preview-title" style={{ marginBottom: `${row.spacingAfter}em` }}>
+                      {value || "Title"}
+                    </p>
+                  );
+                }
+                if (row.kind === "subtitle") {
+                  return (
+                    <p
+                      key={row.id}
+                      className="project-preview-subtitle"
+                      style={{ marginBottom: `${row.spacingAfter}em` }}
+                    >
+                      {value}
+                    </p>
+                  );
+                }
+                return (
+                  <p key={row.id} className="project-preview-meta-row" style={{ marginBottom: `${row.spacingAfter}em` }}>
+                    {row.label ? <span className="project-preview-meta-label">{row.label}</span> : null}{" "}
+                    <span
+                      className="project-preview-meta-value"
+                      dangerouslySetInnerHTML={{ __html: linkifyPreview(value) }}
+                    />
+                  </p>
+                );
+              })}
           </div>
 
           <div className="project-preview-col">
-            <MetaPreviewRow label="project type:" value={project.projectType} />
-            <MetaPreviewRow label="architect in-charge:" value={project.architect} />
-            <MetaPreviewRow label="firm:" value={project.firm} />
-            <MetaPreviewRow label="position:" value={project.role} />
-            <MetaPreviewRow label="project function:" value={project.projectFunction} />
-            <MetaPreviewRow label="award/feature:" value={project.awardFeature} />
-            <MetaPreviewRow label="size/location:" value={sizeLocation} />
-            <MetaPreviewRow label="status:" value={project.status} />
-            <MetaPreviewRow label="client:" value={project.client} />
-            <MetaPreviewRow label={project.teamLabel || "team:"} value={project.team} />
-            <MetaPreviewRow label="specific role(s):" value={project.specificRoles} />
-            {project.summary ? (
-              <p className="project-preview-summary">
-                <span>SUMMARY:</span> {project.summary}
-              </p>
-            ) : null}
-            {project.timeline ? <p className="project-preview-timeline">{project.timeline}</p> : null}
+            {rowsForColumn(layout, 2)
+              .filter((row) => row.visible)
+              .map((row) => {
+                const value = resolveRowValue(row, source);
+                if (!value) return null;
+                if (row.kind === "summary") {
+                  return (
+                    <p
+                      key={row.id}
+                      className="project-preview-summary"
+                      style={{ marginBottom: `${row.spacingAfter}em` }}
+                    >
+                      {row.label ? <span>{row.label}</span> : null} {value}
+                    </p>
+                  );
+                }
+                if (row.kind === "timeline") {
+                  return (
+                    <p
+                      key={row.id}
+                      className="project-preview-timeline"
+                      style={{ marginBottom: `${row.spacingAfter}em` }}
+                    >
+                      {value}
+                    </p>
+                  );
+                }
+                return (
+                  <p key={row.id} className="project-preview-meta-row" style={{ marginBottom: `${row.spacingAfter}em` }}>
+                    {row.label ? <span className="project-preview-meta-label">{row.label}</span> : null}{" "}
+                    <span
+                      className="project-preview-meta-value"
+                      dangerouslySetInnerHTML={{ __html: linkifyPreview(value) }}
+                    />
+                  </p>
+                );
+              })}
           </div>
 
           <div className="project-preview-col">
-            {essayPreview ? (
-              <div className="project-preview-essay" dangerouslySetInnerHTML={{ __html: essayPreview }} />
-            ) : (
-              <p className="admin-muted">Essay preview appears here.</p>
-            )}
+            {rowsForColumn(layout, 3)
+              .filter((row) => row.visible)
+              .map((row) => {
+                const value = resolveRowValue(row, source);
+                if (!value) return null;
+                if (row.kind === "essay") {
+                  return (
+                    <div
+                      key={row.id}
+                      className="project-preview-essay"
+                      style={{ marginBottom: `${row.spacingAfter}em` }}
+                      dangerouslySetInnerHTML={{ __html: essayPreview || escapeHtml(value) }}
+                    />
+                  );
+                }
+                return (
+                  <p key={row.id} style={{ marginBottom: `${row.spacingAfter}em` }}>
+                    {row.label ? <strong>{row.label} </strong> : null}
+                    {value}
+                  </p>
+                );
+              })}
           </div>
         </div>
       </section>
@@ -472,7 +808,7 @@ export default function ProjectEditorPage() {
       <section className="admin-stack admin-card">
         <header className="project-editor-col-head">
           <span>Images</span>
-          <small>carousel above the three columns</small>
+          <small>drag to reorder</small>
         </header>
         <label
           className="admin-drop"

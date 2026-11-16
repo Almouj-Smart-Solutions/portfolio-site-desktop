@@ -497,6 +497,61 @@
   font-weight: 400;
 }
 
+.admin-chip-edit {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.layout-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.layout-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #121212;
+}
+
+.layout-row.is-hidden {
+  opacity: 0.55;
+}
+
+.layout-row-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.layout-row-handle {
+  cursor: grab;
+  color: rgba(236, 236, 236, 0.55);
+  letter-spacing: -0.08em;
+  user-select: none;
+}
+
+.layout-spacing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(236, 236, 236, 0.7);
+}
+
+.layout-spacing input {
+  width: 72px;
+}
+
 .project-editor-columns {
   display: grid;
   grid-template-columns: minmax(180px, 0.9fr) minmax(260px, 1.1fr) minmax(280px, 1.2fr);

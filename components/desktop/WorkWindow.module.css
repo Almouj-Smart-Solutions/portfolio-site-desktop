@@ -134,12 +134,12 @@
 }
 
 .subtitleLine {
-  margin: 0.35em 0 0;
+  margin: 0;
   font-weight: 300;
 }
 
 .metaRow {
-  margin: 0 0 0.55em;
+  margin: 0;
 }
 
 .metaLabel {
@@ -164,7 +164,7 @@
 }
 
 .summaryLine {
-  margin: 0.85em 0 0;
+  margin: 0;
   font-weight: 500;
 }
 
@@ -173,7 +173,7 @@
 }
 
 .timelineLine {
-  margin: 0.75em 0 0;
+  margin: 0;
   font-weight: 300;
   font-style: italic;
 }
