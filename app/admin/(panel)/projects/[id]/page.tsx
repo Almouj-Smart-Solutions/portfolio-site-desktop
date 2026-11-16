@@ -100,6 +100,43 @@ function Field({
   );
 }
 
+/** Allows typing negatives like -0.2 (plain number inputs reset on "-"). */
+function SpacingInput({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? String(value);
+
+  return (
+    <label className="layout-spacing">
+      Space
+      <input
+        type="text"
+        inputMode="decimal"
+        value={shown}
+        onFocus={() => setDraft(String(value))}
+        onChange={(event) => {
+          const raw = event.target.value.trim();
+          setDraft(raw);
+          if (raw === "" || raw === "-" || raw === "." || raw === "-.") return;
+          const next = Number(raw);
+          if (Number.isFinite(next)) onChange(Math.min(4, Math.max(-2, next)));
+        }}
+        onBlur={() => {
+          const next = Number(draft);
+          onChange(Number.isFinite(next) ? Math.min(4, Math.max(-2, next)) : 0);
+          setDraft(null);
+        }}
+      />
+      <span>em</span>
+    </label>
+  );
+}
+
 function applyFieldValue(project: Project, field: string | undefined, value: string): Project {
   if (!field || field === "sizeLocation") return project;
   if (field === "position") return { ...project, role: value };
@@ -206,23 +243,10 @@ function LayoutColumnEditor({
                 >
                   {row.visible ? "Shown" : "Hidden"}
                 </button>
-                <label className="layout-spacing">
-                  Space
-                  <input
-                    type="number"
-                    min={-2}
-                    max={4}
-                    step={0.05}
-                    value={row.spacingAfter}
-                    onChange={(event) => {
-                      const next = Number(event.target.value);
-                      updateRow(row.id, {
-                        spacingAfter: Number.isFinite(next) ? next : 0,
-                      });
-                    }}
-                  />
-                  <span>em</span>
-                </label>
+                <SpacingInput
+                  value={row.spacingAfter}
+                  onChange={(next) => updateRow(row.id, { spacingAfter: next })}
+                />
                 {row.kind === "custom" ? (
                   <button type="button" className="admin-btn danger" onClick={() => removeRow(row.id)}>
                     Delete
