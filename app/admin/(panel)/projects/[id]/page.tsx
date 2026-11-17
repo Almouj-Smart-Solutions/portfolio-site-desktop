@@ -12,6 +12,7 @@ import {
   resolveRowValue,
   rowsForColumn,
   stringifyProjectLayout,
+  type ProjectFieldSource,
   type ProjectLayout,
   type ProjectLayoutRow,
   type RowTypeOption,
@@ -54,6 +55,32 @@ function parseTags(value: string) {
   } catch {
     return [];
   }
+}
+
+function toFieldSource(project: Project, tags: string[] = parseTags(project.tags)): ProjectFieldSource {
+  return {
+    title: project.title,
+    subtitle: project.subtitle,
+    projectType: project.projectType,
+    architect: project.architect,
+    firm: project.firm,
+    role: project.role,
+    position: project.role,
+    projectFunction: project.projectFunction,
+    awardFeature: project.awardFeature,
+    size: project.size,
+    location: project.location,
+    status: project.status,
+    client: project.client,
+    teamLabel: project.teamLabel,
+    team: project.team,
+    specificRoles: project.specificRoles,
+    timeline: project.timeline,
+    summary: project.summary,
+    essay: project.essay,
+    tags,
+    images: project.images.map((image) => image.url),
+  };
 }
 
 function escapeHtml(value: string) {
@@ -146,7 +173,7 @@ function getRowFieldValue(project: Project, row: ProjectLayoutRow) {
   if (row.kind === "sizeLocation") return "";
   if (row.field === "role" || row.field === "position") return project.role;
   if (row.field && row.field in project) return String(project[row.field as keyof Project] ?? "");
-  return resolveRowValue(row, { ...project, position: project.role });
+  return resolveRowValue(row, toFieldSource(project));
 }
 
 function PreviewRowContent({
@@ -160,8 +187,7 @@ function PreviewRowContent({
   tags: string[];
   essayHtml: string;
 }) {
-  const source = { ...project, position: project.role, tags };
-  const value = resolveRowValue(row, source);
+  const value = resolveRowValue(row, toFieldSource(project, tags));
 
   if (row.kind === "title") {
     return <p className="project-preview-title">{value || "Title"}</p>;
